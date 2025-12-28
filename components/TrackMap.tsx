@@ -39,7 +39,7 @@ const TrackMap: React.FC<TrackMapProps> = ({
     // Padding
     const latRange = maxLat - minLat || 0.001;
     const lonRange = maxLon - minLon || 0.001;
-    const padding = 0.20; // 20% padding for better visibility of markers
+    const padding = 0.25; // Increased padding for better visibility of prominent markers
     
     const normalizedMinLat = minLat - latRange * padding;
     const normalizedMaxLat = maxLat + latRange * padding;
@@ -72,7 +72,7 @@ const TrackMap: React.FC<TrackMapProps> = ({
       liveMarker = {
         ...getSvgCoords(userLocation),
         heading: userLocation.heading || 0,
-        isMoving: (userLocation.speed || 0) > 1.0 // > 1 m/s (~3.6 km/h) to show direction
+        isMoving: (userLocation.speed || 0) > 0.8 // Lower threshold for better directional feedback
       };
     }
 
@@ -90,70 +90,88 @@ const TrackMap: React.FC<TrackMapProps> = ({
   return (
     <div className={`relative ${className}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+        <defs>
+          <filter id="marker-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          <filter id="sf-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
         {/* The Track Path */}
         <polyline
           points={svgData.points}
           fill="none"
           stroke={strokeColor}
-          strokeWidth="2.5"
+          strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="drop-shadow-[0_0_2px_rgba(255,255,255,0.1)] opacity-70"
+          className="opacity-50 drop-shadow-[0_0_1px_rgba(255,255,255,0.2)]"
         />
         
-        {/* Start/Finish Line Gate Visual */}
+        {/* Start/Finish Line Marker */}
         {svgData.sfMarker && (
           <g transform={`translate(${svgData.sfMarker.x}, ${svgData.sfMarker.y})`}>
-            {/* Pulsing ring for high visibility */}
-            <circle r="6" fill="none" stroke="#FFCC00" strokeWidth="1" className="animate-pulse opacity-40" />
+            {/* Outer halo */}
+            <circle r="8" fill="none" stroke="#FFCC00" strokeWidth="0.5" className="animate-pulse opacity-30" />
             
-            {/* Checkered style core */}
-            <rect x="-3" y="-3" width="6" height="6" fill="#000" />
-            <rect x="-3" y="-3" width="3" height="3" fill="#FFCC00" />
-            <rect x="0" y="0" width="3" height="3" fill="#FFCC00" />
-            <rect x="-3" y="-3" width="6" height="6" fill="none" stroke="#FFCC00" strokeWidth="0.5" />
+            {/* Checkered Gate Icon */}
+            <g filter="url(#sf-glow)">
+              <rect x="-4" y="-4" width="8" height="8" fill="#000" stroke="#FFCC00" strokeWidth="0.5" />
+              <rect x="-4" y="-4" width="4" height="4" fill="#FFCC00" />
+              <rect x="0" y="0" width="4" height="4" fill="#FFCC00" />
+            </g>
             
-            {/* Labels for "Finish" */}
-            <text y="-8" textAnchor="middle" className="text-[4px] font-bold fill-racing-yellow uppercase tracking-tighter">FINISH</text>
+            {/* Tag label */}
+            <g transform="translate(0, -10)">
+              <rect x="-8" y="-4" width="16" height="5" rx="1" fill="#000" className="opacity-80" />
+              <text textAnchor="middle" y="0" className="text-[3.5px] font-black fill-racing-yellow uppercase tracking-widest">GATE</text>
+            </g>
           </g>
         )}
 
-        {/* Live User Position - Directional Arrow or Radar Beacon */}
+        {/* Live User Position Marker */}
         {svgData.liveMarker && (
           <g transform={`translate(${svgData.liveMarker.x}, ${svgData.liveMarker.y})`}>
-             {/* Dynamic radar ping */}
-             <circle r="10" fill="none" stroke="#007AFF" strokeWidth="0.5" className="animate-ping opacity-20" />
+             {/* Large pulsing radar wave */}
+             <circle r="12" fill="none" stroke="#007AFF" strokeWidth="0.4" className="animate-ping opacity-20" />
              
-             <g transform={`rotate(${svgData.liveMarker.heading})`}>
+             <g transform={`rotate(${svgData.liveMarker.heading})`} filter="url(#marker-glow)">
                 {svgData.liveMarker.isMoving ? (
-                   /* Directional Arrow */
-                   <path 
-                      d="M 0,-6 L 4,4 L 0,2 L -4,4 Z" 
-                      fill="#007AFF" 
-                      stroke="white" 
-                      strokeWidth="1" 
-                      className="drop-shadow-[0_0_3px_rgba(0,122,255,0.5)]"
-                   />
-                ) : (
-                   /* Stationary Beacon */
+                   /* High-visibility directional arrow */
                    <g>
-                      <circle r="4" fill="#007AFF" stroke="white" strokeWidth="1.5" className="drop-shadow-[0_0_3px_rgba(0,122,255,0.8)]" />
-                      <circle r="1.5" fill="white" />
+                     <path 
+                        d="M 0,-8 L 6,6 L 0,2 L -6,6 Z" 
+                        fill="#007AFF" 
+                        stroke="#fff" 
+                        strokeWidth="1.2" 
+                        strokeLinejoin="round"
+                     />
+                     <path d="M 0,-4 L 0,0" stroke="#fff" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+                   </g>
+                ) : (
+                   /* Prominent stationary beacon */
+                   <g>
+                      <circle r="6" fill="#007AFF" stroke="#fff" strokeWidth="1.5" className="drop-shadow-lg" />
+                      <circle r="2" fill="#fff" className="animate-pulse" />
                    </g>
                 )}
              </g>
           </g>
         )}
 
-        {/* Path Completion / Trailing Point */}
+        {/* Path Completion Icon (Tail) */}
         {showPoints && path.length > 0 && !userLocation && (
            <circle 
               cx={svgData.points.split(' ').pop()?.split(',')[0]} 
               cy={svgData.points.split(' ').pop()?.split(',')[1]} 
-              r="2.5" 
-              fill="white" 
+              r="3" 
+              fill="#fff" 
               stroke="#FF3B30" 
-              strokeWidth="1" 
+              strokeWidth="1.5" 
             />
         )}
       </svg>

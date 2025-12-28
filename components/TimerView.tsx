@@ -5,6 +5,7 @@ import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 import { MOTOGP_TRACKS } from '../data/tracks';
 import { fetchWeather, WeatherData } from '../services/weatherService';
 import TrackMap from './TrackMap';
+import { RideInfo } from '../App';
 
 interface TimerViewProps {
   currentLocation: Coordinate | null;
@@ -15,6 +16,7 @@ interface TimerViewProps {
   laps: Lap[];
   setLaps: React.Dispatch<React.SetStateAction<Lap[]>>;
   currentSessionPath: Coordinate[];
+  selectedRide: RideInfo | null;
 }
 
 const TimerView: React.FC<TimerViewProps> = ({
@@ -25,7 +27,8 @@ const TimerView: React.FC<TimerViewProps> = ({
   setStartFinishLine,
   laps,
   setLaps,
-  currentSessionPath
+  currentSessionPath,
+  selectedRide
 }) => {
   const [currentLapStart, setCurrentLapStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState<number>(0);
@@ -33,6 +36,7 @@ const TimerView: React.FC<TimerViewProps> = ({
   const [showTrackSelector, setShowTrackSelector] = useState(false);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [isNewBest, setIsNewBest] = useState(false);
   const requestRef = useRef<number>(0);
 
   // Lap Detection Settings
@@ -59,6 +63,21 @@ const TimerView: React.FC<TimerViewProps> = ({
       : 0;
     return { fastestLap, maxSpeedMps };
   }, [laps, currentSessionPath]);
+
+  // Track new fastest lap for UI feedback
+  useEffect(() => {
+    if (laps.length > 0) {
+      const lastLap = laps[laps.length - 1];
+      const otherLaps = laps.slice(0, -1);
+      const previousBest = otherLaps.length > 0 ? Math.min(...otherLaps.map(l => l.time)) : Infinity;
+      
+      if (lastLap.time < previousBest) {
+        setIsNewBest(true);
+        const timer = setTimeout(() => setIsNewBest(false), 5000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [laps]);
 
   // Fetch weather when location changes significantly or on mount
   useEffect(() => {
@@ -193,6 +212,8 @@ const TimerView: React.FC<TimerViewProps> = ({
     ? getDistance(currentLocation, startFinishLine) 
     : null;
 
+  const isNearLine = distanceToLine !== null && distanceToLine < detectionRadius;
+
   return (
     <div className="flex flex-col h-full space-y-4 p-4 relative">
       {/* Settings Modal */}
@@ -301,25 +322,34 @@ const TimerView: React.FC<TimerViewProps> = ({
               <div className="flex items-center space-x-1 mt-0.5">
                 <span className="text-sm">{weather.icon}</span>
                 <span className="text-[10px] font-bold text-white font-mono">{weather.temp.toFixed(0)}°C</span>
-                <span className="text-[8px] text-gray-500 uppercase font-bold truncate max-w-[50px]">{weather.condition}</span>
               </div>
             )}
           </div>
+          {selectedRide && (
+            <div className="hidden xs:flex flex-col border-l border-gray-700 pl-3">
+              <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Active Ride</span>
+              <span className="text-[10px] text-racing-purple font-black uppercase truncate max-w-[80px]">
+                {selectedRide.brand} {selectedRide.model}
+              </span>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-3">
              {autoMode && (
                <div className="flex items-center bg-racing-green/10 px-2 py-1 rounded border border-racing-green/30">
-                 <span className="text-[8px] font-black text-racing-green uppercase tracking-tighter">Auto Mode</span>
+                 <span className="text-[8px] font-black text-racing-green uppercase tracking-tighter">Auto</span>
                </div>
              )}
              {startFinishLine ? (
-                <div className="flex items-center bg-racing-yellow/10 px-3 py-1.5 rounded-lg border border-racing-yellow/30 shadow-[0_0_10px_rgba(255,204,0,0.1)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-racing-yellow mr-2" viewBox="0 0 24 24" fill="currentColor">
+                <div className={`flex items-center px-3 py-1.5 rounded-lg border transition-all duration-300 ${isNearLine ? 'bg-racing-green/20 border-racing-green shadow-[0_0_15px_rgba(52,199,89,0.3)] animate-pulse' : 'bg-racing-yellow/10 border-racing-yellow/30 shadow-[0_0_10px_rgba(255,204,0,0.1)]'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 transition-colors ${isNearLine ? 'text-racing-green' : 'text-racing-yellow'}`} viewBox="0 0 24 24" fill="currentColor">
                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V21a1 1 0 11-2 0V4zm9 1a1 1 0 110-2h8a1 1 0 011 1v12a1 1 0 01-1 1h-6.586l-2.293 2.293a1 1 0 01-1.414-1.414L12.586 16H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 011.414-1.414L14.414 13H19V5h-7z" clipRule="evenodd"/>
                     </svg>
                     <div className="flex flex-col leading-none">
-                         <span className="text-[10px] font-bold text-racing-yellow uppercase tracking-wider">Line Set</span>
+                         <span className={`text-[10px] font-bold uppercase tracking-wider ${isNearLine ? 'text-racing-green' : 'text-racing-yellow'}`}>
+                           {isNearLine ? 'IN RANGE' : 'LINE SET'}
+                         </span>
                          {distanceToLine !== null && (
                             <span className="text-xs font-mono text-white">
                                 {distanceToLine < 1000 ? `${distanceToLine.toFixed(0)}m` : `${(distanceToLine/1000).toFixed(1)}km`}
@@ -348,15 +378,17 @@ const TimerView: React.FC<TimerViewProps> = ({
             <>
                 {/* Session Record Prominent Indicator */}
                 {sessionStats.fastestLap && (
-                   <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 animate-fade-in">
-                      <div className="flex flex-col items-center bg-racing-purple/10 backdrop-blur-sm border border-racing-purple/40 px-6 py-2 rounded-2xl shadow-[0_0_20px_rgba(175,82,222,0.2)]">
+                   <div className={`absolute top-0 left-1/2 -translate-x-1/2 z-30 transition-all duration-500 transform ${isNewBest ? 'scale-110' : 'scale-100'}`}>
+                      <div className={`flex flex-col items-center px-8 py-3 rounded-2xl border-2 shadow-xl backdrop-blur-md transition-all duration-300 ${isNewBest ? 'bg-racing-purple border-white animate-bounce' : 'bg-racing-purple/10 border-racing-purple/40 shadow-[0_0_20px_rgba(175,82,222,0.2)]'}`}>
                          <div className="flex items-center space-x-2">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-racing-purple animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+                           <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isNewBest ? 'text-white' : 'text-racing-purple'} animate-pulse`} viewBox="0 0 20 20" fill="currentColor">
                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                            </svg>
-                           <span className="text-[10px] font-black text-racing-purple uppercase tracking-[0.2em]">Session Record</span>
+                           <span className={`text-xs font-black uppercase tracking-[0.25em] ${isNewBest ? 'text-white' : 'text-racing-purple'}`}>
+                             {isNewBest ? 'PURPLE LAP!' : 'SESSION BEST'}
+                           </span>
                          </div>
-                         <div className="text-xl font-display text-white mt-1">
+                         <div className={`text-3xl font-display mt-1 tracking-tight ${isNewBest ? 'text-white' : 'text-white shadow-purple-500/50'}`}>
                            {formatTime(sessionStats.fastestLap)}
                          </div>
                       </div>
@@ -371,14 +403,20 @@ const TimerView: React.FC<TimerViewProps> = ({
                     </div>
                 )}
 
-                <div className="text-racing-yellow text-xl font-display uppercase tracking-widest">
+                <div className="text-racing-yellow text-xl font-display uppercase tracking-widest text-center">
                 {currentLapStart ? `LAP ${laps.length + 1}` : (autoMode ? "AUTO ARMED" : "READY")}
+                {selectedRide && !currentLapStart && (
+                  <div className="text-[10px] text-gray-500 mt-1 font-sans">{selectedRide.brand} {selectedRide.model}</div>
+                )}
                 </div>
                 <div className="text-7xl font-display text-white tracking-tighter tabular-nums">
                 {formatTime(elapsed)}
                 </div>
-                <div className="text-gray-500 text-sm font-mono">
-                LAST: {laps.length > 0 ? formatTime(laps[laps.length - 1].time) : "--:--.--"}
+                <div className="text-gray-500 text-sm font-mono flex items-center space-x-2">
+                  <span>LAST: {laps.length > 0 ? formatTime(laps[laps.length - 1].time) : "--:--.--"}</span>
+                  {laps.length > 0 && sessionStats.fastestLap && laps[laps.length-1].time === sessionStats.fastestLap && (
+                    <span className="w-2 h-2 rounded-full bg-racing-purple animate-pulse" title="Purple Lap" />
+                  )}
                 </div>
             </>
         )}
