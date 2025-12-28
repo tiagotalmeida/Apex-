@@ -40,13 +40,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Sync ride to localStorage
-  useEffect(() => {
-    if (selectedRide) {
-      localStorage.setItem('apex_garage_ride', JSON.stringify(selectedRide));
-    }
-  }, [selectedRide]);
-
   // Geolocation setup
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -113,6 +106,7 @@ const App: React.FC = () => {
             setLaps={setLaps}
             currentSessionPath={sessionPath}
             selectedRide={selectedRide}
+            setSelectedRide={setSelectedRide}
           />
         )}
         {currentTab === AppTab.GARAGE && (
@@ -125,6 +119,7 @@ const App: React.FC = () => {
           <MapsView 
             currentLocation={currentLocation} 
             selectedRide={selectedRide}
+            setSelectedRide={setSelectedRide}
           />
         )}
         {currentTab === AppTab.ANALYSIS && (

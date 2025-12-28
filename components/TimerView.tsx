@@ -6,6 +6,8 @@ import { MOTOGP_TRACKS } from '../data/tracks';
 import { fetchWeather, WeatherData } from '../services/weatherService';
 import TrackMap from './TrackMap';
 import { RideInfo } from '../App';
+import SearchableDropdown from './SearchableDropdown';
+import { MOTORCYCLE_DATA, YEARS } from '../data/motorcycles';
 
 interface TimerViewProps {
   currentLocation: Coordinate | null;
@@ -17,6 +19,7 @@ interface TimerViewProps {
   setLaps: React.Dispatch<React.SetStateAction<Lap[]>>;
   currentSessionPath: Coordinate[];
   selectedRide: RideInfo | null;
+  setSelectedRide: (ride: RideInfo | null) => void;
 }
 
 const TimerView: React.FC<TimerViewProps> = ({
@@ -28,7 +31,8 @@ const TimerView: React.FC<TimerViewProps> = ({
   laps,
   setLaps,
   currentSessionPath,
-  selectedRide
+  selectedRide,
+  setSelectedRide
 }) => {
   const [currentLapStart, setCurrentLapStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState<number>(0);
@@ -47,8 +51,8 @@ const TimerView: React.FC<TimerViewProps> = ({
   // Auto Start/Stop Settings
   const [autoMode, setAutoMode] = useState<boolean>(false);
   const [autoStartSpeed, setAutoStartSpeed] = useState<number>(10); // kph
-  const [autoStopSpeed, setAutoStopSpeed] = useState<number>(5); // kph
   const [autoStartDelay, setAutoStartDelay] = useState<number>(2); // seconds
+  const [autoStopSpeed, setAutoStopSpeed] = useState<number>(5); // kph
   const [autoStopDelay, setAutoStopDelay] = useState<number>(5); // seconds
 
   // Timers for auto-logic
@@ -108,7 +112,6 @@ const TimerView: React.FC<TimerViewProps> = ({
     const speedKph = (currentLocation.speed || 0) * 3.6;
 
     if (!isRecording) {
-      // Logic for Auto Start
       if (speedKph >= autoStartSpeed) {
         if (!startThresholdTimer.current) {
           startThresholdTimer.current = Date.now();
@@ -120,7 +123,6 @@ const TimerView: React.FC<TimerViewProps> = ({
         startThresholdTimer.current = null;
       }
     } else {
-      // Logic for Auto Stop
       if (speedKph <= autoStopSpeed) {
         if (!stopThresholdTimer.current) {
           stopThresholdTimer.current = Date.now();
@@ -144,7 +146,6 @@ const TimerView: React.FC<TimerViewProps> = ({
     if (dist < detectionRadius && (now - lastCrossTime) > (minLapTime * 1000)) {
       if (currentLapStart) {
         const lapTime = now - currentLapStart;
-        
         const lapCoords = currentSessionPath.filter(c => c.timestamp >= currentLapStart && c.timestamp <= now);
         const lapMaxSpeed = lapCoords.length > 0 ? Math.max(...lapCoords.map(c => c.speed || 0)) : 0;
 
@@ -172,7 +173,6 @@ const TimerView: React.FC<TimerViewProps> = ({
       setCurrentLapStart(Date.now());
       setLastCrossTime(Date.now());
     } else if (startFinishLine) {
-      // Arm for next crossing if not immediate
       setLastCrossTime(Date.now() - (minLapTime * 1000) - 1000); 
     }
   };
@@ -202,6 +202,13 @@ const TimerView: React.FC<TimerViewProps> = ({
     setShowTrackSelector(false);
   };
 
+  const handleRideChange = (field: keyof RideInfo, value: string) => {
+    const updated = selectedRide ? { ...selectedRide, [field]: value } : { brand: '', model: '', year: '', [field]: value };
+    if (field === 'brand') updated.model = '';
+    setSelectedRide(updated);
+    localStorage.setItem('apex_garage_ride', JSON.stringify(updated));
+  };
+
   const currentSpeed = currentLocation?.speed ?? 0;
   const speedHistory = currentSessionPath.slice(-30).map((c, i) => ({
     time: i,
@@ -216,75 +223,179 @@ const TimerView: React.FC<TimerViewProps> = ({
 
   return (
     <div className="flex flex-col h-full space-y-4 p-4 relative">
-      {/* Settings Modal */}
+      {/* Settings Modal - Redesigned */}
       {showSettings && (
-        <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-sm p-4 flex flex-col items-center justify-center animate-fade-in">
-           <div className="bg-racing-card w-full max-w-sm rounded-xl border border-gray-700 p-6 space-y-6 overflow-y-auto no-scrollbar">
-             <div className="flex justify-between items-center border-b border-gray-700 pb-4 sticky top-0 bg-racing-card z-10">
-               <h2 className="text-xl font-display text-white">SETTINGS</h2>
-               <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white">
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                 </svg>
-               </button>
+        <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-md p-4 flex flex-col items-center justify-center animate-fade-in">
+           <div className="bg-racing-card w-full max-w-sm rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+             <div className="p-6 border-b border-gray-800 bg-racing-dark flex justify-between items-center">
+                <div>
+                   <h2 className="text-xl font-display text-white uppercase italic tracking-wider">Calibration</h2>
+                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Sensor & Logic Tuning</p>
+                </div>
+                <button 
+                  onClick={() => setShowSettings(false)} 
+                  className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
              </div>
              
-             <div className="space-y-6">
-               <section>
-                 <h3 className="text-xs font-bold text-racing-red uppercase tracking-widest mb-4">Lap Detection</h3>
-                 <div className="space-y-4">
+             <div className="flex-grow overflow-y-auto no-scrollbar p-6 space-y-8">
+               {/* Machine Profile Group */}
+               <section className="space-y-4">
+                 <div className="flex items-center space-x-2">
+                    <div className="w-1 h-4 bg-racing-purple rounded-full" />
+                    <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Machine Profile</h3>
+                 </div>
+                 <div className="space-y-3 bg-black/20 p-4 rounded-xl border border-gray-800">
+                    <SearchableDropdown
+                      options={Object.keys(MOTORCYCLE_DATA)}
+                      value={selectedRide?.brand || ''}
+                      onSelect={(val) => handleRideChange('brand', val)}
+                      placeholder="Brand"
+                    />
+                    <SearchableDropdown
+                      options={selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : []}
+                      value={selectedRide?.model || ''}
+                      onSelect={(val) => handleRideChange('model', val)}
+                      placeholder="Model"
+                      disabled={!selectedRide?.brand}
+                    />
+                    <SearchableDropdown
+                      options={YEARS}
+                      value={selectedRide?.year || ''}
+                      onSelect={(val) => handleRideChange('year', val)}
+                      placeholder="Year"
+                    />
+                 </div>
+               </section>
+
+               {/* Lap Detection Group */}
+               <section className="space-y-6">
+                 <div className="flex items-center space-x-2">
+                    <div className="w-1 h-4 bg-racing-red rounded-full" />
+                    <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Lap Detection</h3>
+                 </div>
+                 
+                 <div className="space-y-6 bg-black/20 p-4 rounded-xl border border-gray-800">
                    <div>
-                     <div className="flex justify-between mb-2">
-                        <label className="text-sm font-bold text-gray-400 uppercase">Detection Radius</label>
-                        <span className="text-racing-yellow font-mono">{detectionRadius}m</span>
+                     <div className="flex justify-between items-end mb-3">
+                        <div className="flex flex-col">
+                           <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Gate Radius</label>
+                           <span className="text-[9px] text-gray-600 font-medium">
+                             {detectionRadius < 15 ? 'High Accuracy' : detectionRadius > 60 ? 'Wide Range (Karting)' : 'Standard Circuit'}
+                           </span>
+                        </div>
+                        <div className="bg-racing-yellow/10 px-2 py-0.5 rounded border border-racing-yellow/30">
+                           <span className="text-xs font-mono text-racing-yellow font-bold">{detectionRadius}m</span>
+                        </div>
                      </div>
-                     <input type="range" min="5" max="100" value={detectionRadius} onChange={(e) => setDetectionRadius(parseInt(e.target.value))} className="w-full accent-racing-red h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                     <input 
+                       type="range" min="5" max="100" step="5" 
+                       value={detectionRadius} 
+                       onChange={(e) => setDetectionRadius(parseInt(e.target.value))} 
+                       className="w-full accent-racing-red h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer" 
+                     />
                    </div>
+
                    <div>
-                     <div className="flex justify-between mb-2">
-                        <label className="text-sm font-bold text-gray-400 uppercase">Min Lap Time</label>
-                        <span className="text-racing-yellow font-mono">{minLapTime}s</span>
+                     <div className="flex justify-between items-end mb-3">
+                        <div className="flex flex-col">
+                           <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Debounce Lockout</label>
+                           <span className="text-[9px] text-gray-600 font-medium">
+                             {minLapTime < 30 ? 'Sprint Laps' : 'Endurance / Wide Circuit'}
+                           </span>
+                        </div>
+                        <div className="bg-racing-yellow/10 px-2 py-0.5 rounded border border-racing-yellow/30">
+                           <span className="text-xs font-mono text-racing-yellow font-bold">{minLapTime}s</span>
+                        </div>
                      </div>
-                     <input type="range" min="5" max="120" value={minLapTime} onChange={(e) => setMinLapTime(parseInt(e.target.value))} className="w-full accent-racing-red h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                     <input 
+                       type="range" min="10" max="180" step="5" 
+                       value={minLapTime} 
+                       onChange={(e) => setMinLapTime(parseInt(e.target.value))} 
+                       className="w-full accent-racing-red h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer" 
+                     />
                    </div>
                  </div>
                </section>
 
-               <section className="border-t border-gray-800 pt-6">
-                 <div className="flex justify-between items-center mb-4">
-                   <h3 className="text-xs font-bold text-racing-green uppercase tracking-widest">Auto Recording</h3>
-                   <button 
-                    onClick={() => setAutoMode(!autoMode)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${autoMode ? 'bg-racing-green' : 'bg-gray-700'}`}
-                   >
-                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoMode ? 'translate-x-6' : 'translate-x-1'}`} />
-                   </button>
+               {/* Auto Mode Group */}
+               <section className="space-y-6">
+                 <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                       <div className={`w-1 h-4 rounded-full transition-colors ${autoMode ? 'bg-racing-green' : 'bg-gray-600'}`} />
+                       <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Auto Recording</h3>
+                    </div>
+                    <button 
+                      onClick={() => setAutoMode(!autoMode)}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-all focus:outline-none border-2 ${autoMode ? 'bg-racing-green border-racing-green shadow-[0_0_10px_rgba(52,199,89,0.4)]' : 'bg-gray-800 border-gray-700'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
                  </div>
                  
-                 {autoMode && (
-                   <div className="space-y-4 animate-fade-in">
-                     <div>
-                       <div className="flex justify-between mb-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase">Start Threshold</label>
-                          <span className="text-racing-yellow font-mono text-xs">{autoStartSpeed} KPH / {autoStartDelay}s</span>
-                       </div>
-                       <input type="range" min="5" max="50" step="5" value={autoStartSpeed} onChange={(e) => setAutoStartSpeed(parseInt(e.target.value))} className="w-full accent-racing-green h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer mb-2" />
-                       <input type="range" min="1" max="10" step="1" value={autoStartDelay} onChange={(e) => setAutoStartDelay(parseInt(e.target.value))} className="w-full accent-racing-green h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                 {autoMode ? (
+                   <div className="space-y-8 animate-fade-in bg-black/20 p-4 rounded-xl border border-gray-800">
+                     <div className="relative pt-2">
+                        <div className="absolute -top-1 left-0 text-[8px] font-black text-racing-green uppercase tracking-widest">Start Logic</div>
+                        <div className="space-y-4 pt-2">
+                           <div>
+                             <div className="flex justify-between items-center mb-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Speed Trigger</label>
+                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStartSpeed} KPH</span>
+                             </div>
+                             <input type="range" min="5" max="60" step="5" value={autoStartSpeed} onChange={(e) => setAutoStartSpeed(parseInt(e.target.value))} className="w-full accent-racing-green h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
+                           </div>
+                           <div>
+                             <div className="flex justify-between items-center mb-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Sustain Duration</label>
+                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStartDelay}s</span>
+                             </div>
+                             <input type="range" min="1" max="10" step="1" value={autoStartDelay} onChange={(e) => setAutoStartDelay(parseInt(e.target.value))} className="w-full accent-racing-green h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
+                           </div>
+                        </div>
                      </div>
-                     <div>
-                       <div className="flex justify-between mb-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase">Stop Threshold</label>
-                          <span className="text-racing-yellow font-mono text-xs">{autoStopSpeed} KPH / {autoStopDelay}s</span>
-                       </div>
-                       <input type="range" min="0" max="30" step="5" value={autoStopSpeed} onChange={(e) => setAutoStopSpeed(parseInt(e.target.value))} className="w-full accent-racing-red h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer mb-2" />
-                       <input type="range" min="2" max="30" step="1" value={autoStopDelay} onChange={(e) => setAutoStopDelay(parseInt(e.target.value))} className="w-full accent-racing-red h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+
+                     <div className="relative pt-2 border-t border-gray-800">
+                        <div className="absolute -top-1 left-0 text-[8px] font-black text-racing-red uppercase tracking-widest">Stop Logic</div>
+                        <div className="space-y-4 pt-4">
+                           <div>
+                             <div className="flex justify-between items-center mb-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Speed Limit</label>
+                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStopSpeed} KPH</span>
+                             </div>
+                             <input type="range" min="0" max="30" step="5" value={autoStopSpeed} onChange={(e) => setAutoStopSpeed(parseInt(e.target.value))} className="w-full accent-racing-red h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
+                           </div>
+                           <div>
+                             <div className="flex justify-between items-center mb-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Cooldown</label>
+                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStopDelay}s</span>
+                             </div>
+                             <input type="range" min="2" max="60" step="1" value={autoStopDelay} onChange={(e) => setAutoStopDelay(parseInt(e.target.value))} className="w-full accent-racing-red h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
+                           </div>
+                        </div>
                      </div>
+                   </div>
+                 ) : (
+                   <div className="bg-gray-900/40 py-8 px-4 rounded-xl border border-gray-800 border-dashed text-center">
+                      <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Manual Trigger Mode Active</p>
+                      <p className="text-[9px] text-gray-700 mt-1 italic">Rider must press START/STOP on main dashboard</p>
                    </div>
                  )}
                </section>
              </div>
              
-             <button onClick={() => setShowSettings(false)} className="w-full bg-racing-green text-black font-bold py-3 rounded-lg uppercase mt-4">Save</button>
+             <div className="p-4 bg-racing-dark border-t border-gray-800">
+               <button 
+                onClick={() => setShowSettings(false)} 
+                className="w-full bg-white hover:bg-gray-200 text-black font-black py-4 rounded-xl uppercase tracking-[0.2em] shadow-lg transition-transform active:scale-95 text-sm"
+               >
+                 Confirm Setup
+               </button>
+             </div>
            </div>
         </div>
       )}
@@ -376,7 +487,6 @@ const TimerView: React.FC<TimerViewProps> = ({
             </div>
         ) : (
             <>
-                {/* Session Record Prominent Indicator */}
                 {sessionStats.fastestLap && (
                    <div className={`absolute top-0 left-1/2 -translate-x-1/2 z-30 transition-all duration-500 transform ${isNewBest ? 'scale-110' : 'scale-100'}`}>
                       <div className={`flex flex-col items-center px-8 py-3 rounded-2xl border-2 shadow-xl backdrop-blur-md transition-all duration-300 ${isNewBest ? 'bg-racing-purple border-white animate-bounce' : 'bg-racing-purple/10 border-racing-purple/40 shadow-[0_0_20px_rgba(175,82,222,0.2)]'}`}>
@@ -395,7 +505,6 @@ const TimerView: React.FC<TimerViewProps> = ({
                    </div>
                 )}
 
-                {/* Live Preview Overlay */}
                 {currentSessionPath.length > 2 && (
                     <div className="absolute top-0 right-0 w-24 h-24 bg-black/40 backdrop-blur-md rounded-bl-2xl border-b border-l border-gray-800 p-2 animate-fade-in z-20">
                         <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />

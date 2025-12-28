@@ -2,17 +2,21 @@ import React, { useState } from 'react';
 import { findNearbyPlaces } from '../services/geminiService';
 import { Coordinate, GroundingChunk } from '../types';
 import { RideInfo } from '../App';
+import SearchableDropdown from './SearchableDropdown';
+import { MOTORCYCLE_DATA, YEARS } from '../data/motorcycles';
 
 interface MapsViewProps {
   currentLocation: Coordinate | null;
   selectedRide: RideInfo | null;
+  setSelectedRide: (ride: RideInfo | null) => void;
 }
 
-const MapsView: React.FC<MapsViewProps> = ({ currentLocation, selectedRide }) => {
+const MapsView: React.FC<MapsViewProps> = ({ currentLocation, selectedRide, setSelectedRide }) => {
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState<string | null>(null);
   const [chunks, setChunks] = useState<GroundingChunk[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleSearch = async (overrideQuery?: string) => {
     const activeQuery = overrideQuery || query;
@@ -42,6 +46,13 @@ const MapsView: React.FC<MapsViewProps> = ({ currentLocation, selectedRide }) =>
     }
   };
 
+  const handleRideChange = (field: keyof RideInfo, value: string) => {
+    const updated = selectedRide ? { ...selectedRide, [field]: value } : { brand: '', model: '', year: '', [field]: value };
+    if (field === 'brand') updated.model = '';
+    setSelectedRide(updated);
+    localStorage.setItem('apex_garage_ride', JSON.stringify(updated));
+  };
+
   return (
     <div className="flex flex-col h-full p-4 overflow-y-auto no-scrollbar pb-20">
        <div className="flex justify-between items-start mb-4">
@@ -49,15 +60,48 @@ const MapsView: React.FC<MapsViewProps> = ({ currentLocation, selectedRide }) =>
            <h2 className="text-2xl font-display text-white">PIT WALL</h2>
            <p className="text-gray-400 text-xs mt-1">Find tracks, services, and mechanics.</p>
          </div>
-         {selectedRide && (
-           <div className="bg-racing-purple/10 px-3 py-1.5 rounded-lg border border-racing-purple/30 flex items-center space-x-2">
-             <div className="w-1.5 h-1.5 bg-racing-purple rounded-full animate-pulse" />
-             <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
-               {selectedRide.model} Active
-             </span>
-           </div>
-         )}
+         <button 
+           onClick={() => setShowProfile(!showProfile)}
+           className={`px-3 py-1.5 rounded-lg border flex items-center space-x-2 transition-all ${selectedRide ? 'bg-racing-purple/10 border-racing-purple/30' : 'bg-gray-800 border-gray-700'}`}
+         >
+           <div className={`w-1.5 h-1.5 rounded-full ${selectedRide ? 'bg-racing-purple animate-pulse' : 'bg-gray-500'}`} />
+           <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
+             {selectedRide ? selectedRide.model : 'No Machine'}
+           </span>
+         </button>
        </div>
+
+       {/* Machine Selection Section - Pre-fill/Edit in MapsView */}
+       {showProfile && (
+         <div className="mb-6 bg-racing-card p-4 rounded-xl border border-racing-purple/30 animate-fade-in space-y-3">
+            <div className="flex justify-between items-center mb-1">
+               <h3 className="text-[10px] font-black text-racing-purple uppercase tracking-[0.2em]">Active Machine Context</h3>
+               <button onClick={() => setShowProfile(false)} className="text-gray-500 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+               <SearchableDropdown
+                  options={Object.keys(MOTORCYCLE_DATA)}
+                  value={selectedRide?.brand || ''}
+                  onSelect={(val) => handleRideChange('brand', val)}
+                  placeholder="Brand"
+                />
+                <SearchableDropdown
+                  options={selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : []}
+                  value={selectedRide?.model || ''}
+                  onSelect={(val) => handleRideChange('model', val)}
+                  placeholder="Model"
+                  disabled={!selectedRide?.brand}
+                />
+                <SearchableDropdown
+                  options={YEARS}
+                  value={selectedRide?.year || ''}
+                  onSelect={(val) => handleRideChange('year', val)}
+                  placeholder="Year"
+                />
+            </div>
+            <p className="text-[8px] text-gray-600 font-bold uppercase text-center mt-2 tracking-widest">Settings synced to Garage & Timer</p>
+         </div>
+       )}
 
        <div className="flex space-x-2 mb-4">
          <input

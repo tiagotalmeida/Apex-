@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { editImageWithGemini } from '../services/geminiService';
 import { MOTORCYCLE_DATA, YEARS } from '../data/motorcycles';
 import { RideInfo } from '../App';
+import SearchableDropdown from './SearchableDropdown';
 
 interface GarageViewProps {
   selectedRide: RideInfo | null;
@@ -14,6 +15,20 @@ const GarageView: React.FC<GarageViewProps> = ({ selectedRide, setSelectedRide }
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  // Local editing state for the ride
+  const [editRide, setEditRide] = useState<RideInfo>({
+    brand: selectedRide?.brand || '',
+    model: selectedRide?.model || '',
+    year: selectedRide?.year || ''
+  });
+
+  useEffect(() => {
+    if (selectedRide) {
+      setEditRide(selectedRide);
+    }
+  }, [selectedRide]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -56,18 +71,32 @@ const GarageView: React.FC<GarageViewProps> = ({ selectedRide, setSelectedRide }
     }
   };
 
-  const handleRideChange = (field: keyof RideInfo, value: string) => {
-    const newRide = selectedRide ? { ...selectedRide, [field]: value } : { brand: '', model: '', year: '', [field]: value };
-    
-    // Reset model if brand changes
-    if (field === 'brand') {
-      newRide.model = '';
-    }
-    
-    setSelectedRide(newRide);
+  const handleFieldChange = (field: keyof RideInfo, value: string) => {
+    setEditRide(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'brand') updated.model = ''; // Reset model on brand change
+      return updated;
+    });
+    setSaveStatus('idle');
   };
 
-  const availableModels = selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : [];
+  const saveToGarage = () => {
+    if (!editRide.brand || !editRide.model || !editRide.year) {
+      alert("Please select Brand, Model, and Year first.");
+      return;
+    }
+    setSaveStatus('saving');
+    // Global State
+    setSelectedRide(editRide);
+    // Local Storage
+    localStorage.setItem('apex_garage_ride', JSON.stringify(editRide));
+    
+    setTimeout(() => {
+      setSaveStatus('saved');
+    }, 400);
+  };
+
+  const availableModels = editRide.brand ? MOTORCYCLE_DATA[editRide.brand] : [];
 
   return (
     <div className="flex flex-col h-full p-4 overflow-y-auto no-scrollbar pb-20">
@@ -83,72 +112,79 @@ const GarageView: React.FC<GarageViewProps> = ({ selectedRide, setSelectedRide }
 
       <div className="space-y-6">
         {/* Ride Selection Section */}
-        <section className="bg-racing-card rounded-xl border border-gray-700 p-4 space-y-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-racing-yellow" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-            </svg>
-            <h3 className="text-xs font-bold text-white uppercase tracking-widest">Identify Your Ride</h3>
+        <section className="bg-racing-card rounded-xl border border-gray-700 p-4 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-racing-yellow" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+              </svg>
+              <h3 className="text-xs font-bold text-white uppercase tracking-widest">Identify Your Ride</h3>
+            </div>
+            {saveStatus === 'saved' && (
+              <span className="text-[10px] text-racing-green font-black uppercase tracking-widest animate-fade-in flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                Saved to Garage
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Brand</label>
-              <select 
-                value={selectedRide?.brand || ''} 
-                onChange={(e) => handleRideChange('brand', e.target.value)}
-                className="w-full bg-racing-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-racing-yellow transition-colors text-sm appearance-none cursor-pointer"
-              >
-                <option value="">Select Brand</option>
-                {Object.keys(MOTORCYCLE_DATA).map(brand => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={Object.keys(MOTORCYCLE_DATA)}
+                value={editRide.brand}
+                onSelect={(val) => handleFieldChange('brand', val)}
+                placeholder="Select Brand"
+              />
             </div>
 
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Model</label>
-              <select 
-                value={selectedRide?.model || ''} 
-                disabled={!selectedRide?.brand}
-                onChange={(e) => handleRideChange('model', e.target.value)}
-                className="w-full bg-racing-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-racing-yellow transition-colors text-sm appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">{selectedRide?.brand ? "Select Model" : "Select Brand First"}</option>
-                {availableModels.map(model => (
-                  <option key={model} value={model}>{model}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={availableModels}
+                value={editRide.model}
+                onSelect={(val) => handleFieldChange('model', val)}
+                placeholder="Select Model"
+                disabled={!editRide.brand}
+              />
             </div>
 
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Year</label>
-              <select 
-                value={selectedRide?.year || ''} 
-                onChange={(e) => handleRideChange('year', e.target.value)}
-                className="w-full bg-racing-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-racing-yellow transition-colors text-sm appearance-none cursor-pointer"
-              >
-                <option value="">Select Year</option>
-                {YEARS.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={YEARS}
+                value={editRide.year}
+                onSelect={(val) => handleFieldChange('year', val)}
+                placeholder="Select Year"
+              />
             </div>
           </div>
           
-          {selectedRide?.brand && selectedRide?.model && (
-             <div className="pt-2 flex justify-end">
+          <div className="pt-2 flex space-x-3">
+             <button 
+                onClick={saveToGarage}
+                disabled={saveStatus === 'saving' || !editRide.brand || !editRide.model || !editRide.year}
+                className={`flex-grow py-3 rounded-lg font-bold text-xs uppercase tracking-[0.2em] transition-all shadow-lg flex items-center justify-center ${
+                  saveStatus === 'saved' ? 'bg-racing-green text-black' : 'bg-racing-yellow text-black hover:bg-yellow-400 active:scale-[0.98]'
+                } disabled:opacity-30`}
+             >
+                {saveStatus === 'saving' ? 'Persisting...' : saveStatus === 'saved' ? 'Machine Updated' : 'Save My Ride'}
+             </button>
+             {selectedRide && (
                 <button 
                   onClick={() => {
                     setSelectedRide(null);
                     localStorage.removeItem('apex_garage_ride');
+                    setEditRide({brand:'', model:'', year:''});
+                    setSaveStatus('idle');
                   }}
-                  className="text-[9px] text-gray-500 hover:text-racing-red font-bold uppercase tracking-widest transition-colors"
+                  className="px-4 py-3 bg-gray-800 text-gray-400 hover:text-racing-red rounded-lg transition-colors border border-gray-700"
                 >
-                  Clear My Ride
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                 </button>
-             </div>
-          )}
+             )}
+          </div>
         </section>
 
         {/* Upload Area */}
