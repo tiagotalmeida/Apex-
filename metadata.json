@@ -1,0 +1,8 @@
+{
+  "name": "Apex GPS Lap Timer",
+  "description": "A professional-grade GPS lap timer with AI-powered image editing for track days and Google Maps integration for finding nearby services.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
