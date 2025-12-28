@@ -21,6 +21,7 @@
                 card: '#2C2C2E',
                 green: '#34C759',
                 yellow: '#FFCC00',
+                purple: '#AF52DE',
               }
             }
           }
@@ -40,6 +41,13 @@
       .no-scrollbar {
         -ms-overflow-style: none;  /* IE and Edge */
         scrollbar-width: none;  /* Firefox */
+      }
+      @keyframes pulse-fast {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      .animate-pulse-fast {
+        animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
     </style>
   <script type="importmap">

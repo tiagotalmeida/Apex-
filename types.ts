@@ -4,6 +4,7 @@ export interface Coordinate {
   accuracy: number;
   timestamp: number;
   speed: number | null; // meters per second
+  heading?: number | null; // degrees clockwise from North
 }
 
 export interface Lap {
