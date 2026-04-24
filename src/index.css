@@ -1,0 +1,113 @@
+/* Local fonts — no CDN needed inside Android WebView */
+@import '@fontsource/orbitron/400.css';
+@import '@fontsource/orbitron/700.css';
+@import '@fontsource/orbitron/900.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter/900.css';
+@import '@fontsource/russo-one';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+:root { --stripe: #E8001A; }
+* { -webkit-tap-highlight-color: transparent; }
+body {
+  background-color: #0a0a0a;
+  color: #f5f5f5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Carbon fibre texture ─────────────────────────────────────────── */
+.carbon {
+  background-color: #141414;
+  background-image:
+    repeating-linear-gradient(45deg,  transparent, transparent 3px, rgba(255,255,255,.018) 3px, rgba(255,255,255,.018) 6px),
+    repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,.018) 3px, rgba(255,255,255,.018) 6px);
+}
+
+/* ── Red speed-stripe ─────────────────────────────────────────────── */
+.stripe-top { position: relative; }
+.stripe-top::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--stripe) 0%, #ff4d00 60%, transparent 100%);
+  z-index: 10;
+}
+
+/* ── Cut-corner buttons ───────────────────────────────────────────── */
+.cut-corner    { clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+.cut-corner-lg { clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
+
+/* ── Timer glow ───────────────────────────────────────────────────── */
+.timer-glow { text-shadow: 0 0 30px rgba(232,0,26,0.3), 0 0 60px rgba(232,0,26,0.1); }
+
+/* ── Animations ───────────────────────────────────────────────────── */
+@keyframes pulse-fast {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes flash-best {
+  0%   { background-color: #FFD600; color: #000; }
+  50%  { background-color: transparent; color: #FFD600; }
+  100% { background-color: #FFD600; color: #000; }
+}
+
+.animate-pulse-fast  { animation: pulse-fast 0.8s ease-in-out infinite; }
+.animate-fade-in     { animation: fade-in 0.2s ease-out forwards; }
+.animate-slide-right { animation: slide-in-right 0.25s ease-out forwards; }
+.animate-flash-best  { animation: flash-best 0.4s ease-in-out 3; }
+
+/* ── Data labels ──────────────────────────────────────────────────── */
+.data-label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #555;
+}
+.data-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 6px 0;
+}
+
+/* ── Range inputs ─────────────────────────────────────────────────── */
+input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; }
+input[type=range]::-webkit-slider-runnable-track { height: 3px; background: #2a2a2a; border-radius: 2px; }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: #E8001A;
+  border-radius: 50%;
+  margin-top: -6.5px;
+  box-shadow: 0 0 6px rgba(232,0,26,0.6);
+}
+
+/* ── Nav active bar ───────────────────────────────────────────────── */
+.nav-active-bar {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 2px;
+  background: #E8001A;
+  border-radius: 1px;
+}
