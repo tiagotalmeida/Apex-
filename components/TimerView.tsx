@@ -228,380 +228,320 @@ const TimerView: React.FC<TimerViewProps> = ({
   };
 
   const currentSpeed = currentLocation?.speed ?? 0;
-  const speedHistory = currentSessionPath.slice(-30).map((c, i) => ({
+  const speedHistory = currentSessionPath.slice(-40).map((c, i) => ({
     time: i,
     speed: (c.speed || 0) * 3.6
   }));
 
-  const distanceToLine = (currentLocation && startFinishLine) 
-    ? getDistance(currentLocation, startFinishLine) 
+  const distanceToLine = (currentLocation && startFinishLine)
+    ? getDistance(currentLocation, startFinishLine)
     : null;
-
   const isNearLine = distanceToLine !== null && distanceToLine < detectionRadius;
 
-  return (
-    <div className="flex flex-col h-full space-y-4 p-4 relative">
-      {/* Settings Modal - Redesigned */}
-      {showSettings && (
-        <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-md p-4 flex flex-col items-center justify-center animate-fade-in">
-           <div className="bg-racing-card w-full max-w-sm rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-             <div className="p-6 border-b border-gray-800 bg-racing-dark flex justify-between items-center">
-                <div>
-                   <h2 className="text-xl font-display text-white uppercase italic tracking-wider">Calibration</h2>
-                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Sensor & Logic Tuning</p>
-                </div>
-                <button 
-                  onClick={() => setShowSettings(false)} 
-                  className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-             </div>
-             
-             <div className="flex-grow overflow-y-auto no-scrollbar p-6 space-y-8">
-               {/* Machine Profile Group */}
-               <section className="space-y-4">
-                 <div className="flex items-center space-x-2">
-                    <div className="w-1 h-4 bg-racing-purple rounded-full" />
-                    <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Machine Profile</h3>
-                 </div>
-                 <div className="space-y-3 bg-black/20 p-4 rounded-xl border border-gray-800">
-                    <SearchableDropdown
-                      options={Object.keys(MOTORCYCLE_DATA)}
-                      value={selectedRide?.brand || ''}
-                      onSelect={(val) => handleRideChange('brand', val)}
-                      placeholder="Brand"
-                    />
-                    <SearchableDropdown
-                      options={selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : []}
-                      value={selectedRide?.model || ''}
-                      onSelect={(val) => handleRideChange('model', val)}
-                      placeholder="Model"
-                      disabled={!selectedRide?.brand}
-                    />
-                    <SearchableDropdown
-                      options={YEARS}
-                      value={selectedRide?.year || ''}
-                      onSelect={(val) => handleRideChange('year', val)}
-                      placeholder="Year"
-                    />
-                 </div>
-               </section>
+  const lastLap = laps.length > 0 ? laps[laps.length - 1] : null;
+  const delta = lastLap && sessionStats.fastestLap
+    ? lastLap.time - sessionStats.fastestLap
+    : null;
 
-               {/* Lap Detection Group */}
-               <section className="space-y-6">
-                 <div className="flex items-center space-x-2">
-                    <div className="w-1 h-4 bg-racing-red rounded-full" />
-                    <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Lap Detection</h3>
-                 </div>
-                 
-                 <div className="space-y-6 bg-black/20 p-4 rounded-xl border border-gray-800">
-                   <div>
-                     <div className="flex justify-between items-end mb-3">
-                        <div className="flex flex-col">
-                           <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Gate Radius</label>
-                           <span className="text-[9px] text-gray-600 font-medium">
-                             {detectionRadius < 15 ? 'High Accuracy' : detectionRadius > 60 ? 'Wide Range (Karting)' : 'Standard Circuit'}
-                           </span>
-                        </div>
-                        <div className="bg-racing-yellow/10 px-2 py-0.5 rounded border border-racing-yellow/30">
-                           <span className="text-xs font-mono text-racing-yellow font-bold">{detectionRadius}m</span>
-                        </div>
-                     </div>
-                     <input 
-                       type="range" min="5" max="100" step="5" 
-                       value={detectionRadius} 
-                       onChange={(e) => setDetectionRadius(parseInt(e.target.value))} 
-                       className="w-full accent-racing-red h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer" 
-                     />
-                   </div>
-
-                   <div>
-                     <div className="flex justify-between items-end mb-3">
-                        <div className="flex flex-col">
-                           <label className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Debounce Lockout</label>
-                           <span className="text-[9px] text-gray-600 font-medium">
-                             {minLapTime < 30 ? 'Sprint Laps' : 'Endurance / Wide Circuit'}
-                           </span>
-                        </div>
-                        <div className="bg-racing-yellow/10 px-2 py-0.5 rounded border border-racing-yellow/30">
-                           <span className="text-xs font-mono text-racing-yellow font-bold">{minLapTime}s</span>
-                        </div>
-                     </div>
-                     <input 
-                       type="range" min="10" max="180" step="5" 
-                       value={minLapTime} 
-                       onChange={(e) => setMinLapTime(parseInt(e.target.value))} 
-                       className="w-full accent-racing-red h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer" 
-                     />
-                   </div>
-                 </div>
-               </section>
-
-               {/* Auto Mode Group */}
-               <section className="space-y-6">
-                 <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                       <div className={`w-1 h-4 rounded-full transition-colors ${autoMode ? 'bg-racing-green' : 'bg-gray-600'}`} />
-                       <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Auto Recording</h3>
-                    </div>
-                    <button 
-                      onClick={() => setAutoMode(!autoMode)}
-                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-all focus:outline-none border-2 ${autoMode ? 'bg-racing-green border-racing-green shadow-[0_0_10px_rgba(52,199,89,0.4)]' : 'bg-gray-800 border-gray-700'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoMode ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                 </div>
-                 
-                 {autoMode ? (
-                   <div className="space-y-8 animate-fade-in bg-black/20 p-4 rounded-xl border border-gray-800">
-                     <div className="relative pt-2">
-                        <div className="absolute -top-1 left-0 text-[8px] font-black text-racing-green uppercase tracking-widest">Start Logic</div>
-                        <div className="space-y-4 pt-2">
-                           <div>
-                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Speed Trigger</label>
-                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStartSpeed} KPH</span>
-                             </div>
-                             <input type="range" min="5" max="60" step="5" value={autoStartSpeed} onChange={(e) => setAutoStartSpeed(parseInt(e.target.value))} className="w-full accent-racing-green h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
-                           </div>
-                           <div>
-                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Sustain Duration</label>
-                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStartDelay}s</span>
-                             </div>
-                             <input type="range" min="1" max="10" step="1" value={autoStartDelay} onChange={(e) => setAutoStartDelay(parseInt(e.target.value))} className="w-full accent-racing-green h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
-                           </div>
-                        </div>
-                     </div>
-
-                     <div className="relative pt-2 border-t border-gray-800">
-                        <div className="absolute -top-1 left-0 text-[8px] font-black text-racing-red uppercase tracking-widest">Stop Logic</div>
-                        <div className="space-y-4 pt-4">
-                           <div>
-                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Speed Limit</label>
-                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStopSpeed} KPH</span>
-                             </div>
-                             <input type="range" min="0" max="30" step="5" value={autoStopSpeed} onChange={(e) => setAutoStopSpeed(parseInt(e.target.value))} className="w-full accent-racing-red h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
-                           </div>
-                           <div>
-                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Cooldown</label>
-                                <span className="text-[11px] font-mono text-white bg-gray-800 px-2 py-0.5 rounded">{autoStopDelay}s</span>
-                             </div>
-                             <input type="range" min="2" max="60" step="1" value={autoStopDelay} onChange={(e) => setAutoStopDelay(parseInt(e.target.value))} className="w-full accent-racing-red h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer" />
-                           </div>
-                        </div>
-                     </div>
-                   </div>
-                 ) : (
-                   <div className="bg-gray-900/40 py-8 px-4 rounded-xl border border-gray-800 border-dashed text-center">
-                      <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Manual Trigger Mode Active</p>
-                      <p className="text-[9px] text-gray-700 mt-1 italic">Rider must press START/STOP on main dashboard</p>
-                   </div>
-                 )}
-               </section>
-             </div>
-             
-             <div className="p-4 bg-racing-dark border-t border-gray-800">
-               <button 
-                onClick={() => setShowSettings(false)} 
-                className="w-full bg-white hover:bg-gray-200 text-black font-black py-4 rounded-xl uppercase tracking-[0.2em] shadow-lg transition-transform active:scale-95 text-sm"
-               >
-                 Confirm Setup
-               </button>
-             </div>
-           </div>
+  // ── SETTINGS PANEL ─────────────────────────────────────────────────────────
+  if (showSettings) return (
+    <div className="absolute inset-0 z-[60] bg-black flex flex-col stripe-top animate-fade-in">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+        <div>
+          <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">Setup</p>
+          <h2 className="text-lg font-display text-white uppercase italic tracking-wider leading-none">Calibration</h2>
         </div>
-      )}
-
-      {/* Track Selector Modal */}
-      {showTrackSelector && (
-        <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-sm p-4 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-             <h2 className="text-xl font-display text-white">SELECT TRACK</h2>
-             <button onClick={() => setShowTrackSelector(false)} className="text-gray-400 p-2"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div className="overflow-y-auto space-y-2 no-scrollbar pb-safe">
-            {MOTOGP_TRACKS.map(track => (
-              <button key={track.id} onClick={() => handleTrackSelect(track)} className="w-full bg-racing-card p-4 rounded-xl border border-gray-800 flex items-center justify-between hover:border-racing-red transition-colors text-left">
-                <div>
-                  <div className="font-bold text-white text-lg">{track.name}</div>
-                  <div className="text-sm text-gray-500">{track.location}</div>
-                </div>
-                <div className="text-2xl">{track.flag}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top Status Bar */}
-      <div className="flex justify-between items-center bg-racing-card p-3 rounded-lg border border-gray-800">
-        <div className="flex items-center space-x-3">
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-1.5">
-                <div className={`w-2 h-2 rounded-full ${currentLocation ? 'bg-racing-green' : 'bg-racing-red'} animate-pulse`} />
-                <span className="text-[10px] text-gray-400 font-mono uppercase">GPS: {currentLocation?.accuracy.toFixed(0) || '--'}m</span>
-            </div>
-            {weather && (
-              <div className="flex items-center space-x-1 mt-0.5">
-                <span className="text-sm">{weather.icon}</span>
-                <span className="text-[10px] font-bold text-white font-mono">{weather.temp.toFixed(0)}°C</span>
-              </div>
-            )}
-          </div>
-          {selectedRide && (
-            <div className="hidden xs:flex flex-col border-l border-gray-700 pl-3">
-              <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Active Ride</span>
-              <span className="text-[10px] text-racing-purple font-black uppercase truncate max-w-[80px]">
-                {selectedRide.brand} {selectedRide.model}
-              </span>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-3">
-             {autoMode && (
-               <div className="flex items-center bg-racing-green/10 px-2 py-1 rounded border border-racing-green/30">
-                 <span className="text-[8px] font-black text-racing-green uppercase tracking-tighter">Auto</span>
-               </div>
-             )}
-             {startFinishLine ? (
-                <div className={`flex items-center px-3 py-1.5 rounded-lg border transition-all duration-300 ${isNearLine ? 'bg-racing-green/20 border-racing-green shadow-[0_0_15px_rgba(52,199,89,0.3)] animate-pulse' : 'bg-racing-yellow/10 border-racing-yellow/30 shadow-[0_0_10px_rgba(255,204,0,0.1)]'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 mr-2 transition-colors ${isNearLine ? 'text-racing-green' : 'text-racing-yellow'}`} viewBox="0 0 24 24" fill="currentColor">
-                         <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V21a1 1 0 11-2 0V4zm9 1a1 1 0 110-2h8a1 1 0 011 1v12a1 1 0 01-1 1h-6.586l-2.293 2.293a1 1 0 01-1.414-1.414L12.586 16H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 011.414-1.414L14.414 13H19V5h-7z" clipRule="evenodd"/>
-                    </svg>
-                    <div className="flex flex-col leading-none">
-                         <span className={`text-[10px] font-bold uppercase tracking-wider ${isNearLine ? 'text-racing-green' : 'text-racing-yellow'}`}>
-                           {isNearLine ? 'IN RANGE' : 'LINE SET'}
-                         </span>
-                         {distanceToLine !== null && (
-                            <span className="text-xs font-mono text-white">
-                                {distanceToLine < 1000 ? `${distanceToLine.toFixed(0)}m` : `${(distanceToLine/1000).toFixed(1)}km`}
-                            </span>
-                         )}
-                    </div>
-                </div>
-             ) : (
-                <div className="flex items-center px-3 py-1.5 rounded-lg border border-gray-800 bg-gray-900/50">
-                     <span className="text-xs text-gray-500 font-bold tracking-wider">NO LINE</span>
-                </div>
-             )}
-            <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-white bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" /></svg>
-            </button>
-        </div>
-      </div>
-
-      {/* Main Timer Display */}
-      <div className="flex-grow flex flex-col items-center justify-center space-y-2 py-4 relative">
-        {showMap && currentSessionPath.length > 2 ? (
-            <div className="w-full aspect-square max-w-[280px] animate-fade-in">
-                <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
-            </div>
-        ) : (
-            <>
-                {sessionStats.fastestLap && (
-                   <div className={`absolute top-0 left-1/2 -translate-x-1/2 z-30 transition-all duration-500 transform ${isNewBest ? 'scale-110' : 'scale-100'}`}>
-                      <div className={`flex flex-col items-center px-8 py-3 rounded-2xl border-2 shadow-xl backdrop-blur-md transition-all duration-300 ${isNewBest ? 'bg-racing-purple border-white animate-bounce' : 'bg-racing-purple/10 border-racing-purple/40 shadow-[0_0_20px_rgba(175,82,222,0.2)]'}`}>
-                         <div className="flex items-center space-x-2">
-                           <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isNewBest ? 'text-white' : 'text-racing-purple'} animate-pulse`} viewBox="0 0 20 20" fill="currentColor">
-                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                           </svg>
-                           <span className={`text-xs font-black uppercase tracking-[0.25em] ${isNewBest ? 'text-white' : 'text-racing-purple'}`}>
-                             {isNewBest ? 'PURPLE LAP!' : 'SESSION BEST'}
-                           </span>
-                         </div>
-                         <div className={`text-3xl font-display mt-1 tracking-tight ${isNewBest ? 'text-white' : 'text-white shadow-purple-500/50'}`}>
-                           {formatTime(sessionStats.fastestLap)}
-                         </div>
-                      </div>
-                   </div>
-                )}
-
-                {currentSessionPath.length > 2 && (
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-black/40 backdrop-blur-md rounded-bl-2xl border-b border-l border-gray-800 p-2 animate-fade-in z-20">
-                        <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
-                        <div className="absolute bottom-1 right-2 text-[6px] font-bold text-gray-500 uppercase tracking-widest">LIVE</div>
-                    </div>
-                )}
-
-                <div className="text-racing-yellow text-xl font-display uppercase tracking-widest text-center">
-                {currentLapStart ? `LAP ${laps.length + 1}` : (autoMode ? "AUTO ARMED" : "READY")}
-                {selectedRide && !currentLapStart && (
-                  <div className="text-[10px] text-gray-500 mt-1 font-sans">{selectedRide.brand} {selectedRide.model}</div>
-                )}
-                </div>
-                <div className="text-7xl font-display text-white tracking-tighter tabular-nums">
-                {formatTime(elapsed)}
-                </div>
-                <div className="text-gray-500 text-sm font-mono flex items-center space-x-2">
-                  <span>LAST: {laps.length > 0 ? formatTime(laps[laps.length - 1].time) : "--:--.--"}</span>
-                  {laps.length > 0 && sessionStats.fastestLap && laps[laps.length-1].time === sessionStats.fastestLap && (
-                    <span className="w-2 h-2 rounded-full bg-racing-purple animate-pulse" title="Purple Lap" />
-                  )}
-                </div>
-            </>
-        )}
-        
-        <button 
-            onClick={() => setShowMap(!showMap)}
-            className="mt-4 px-3 py-1 bg-racing-dark border border-gray-800 rounded-full text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors"
-        >
-            {showMap ? "Hide Track" : "Fullscreen Track"}
+        <button onClick={() => setShowSettings(false)} className="w-9 h-9 flex items-center justify-center border border-white/10 text-gray-400 hover:text-white hover:border-racing-red transition-colors">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
 
-      {/* Session Bests Highlight */}
-      {(sessionStats.fastestLap || sessionStats.maxSpeedMps > 0) && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          <div className="bg-gradient-to-br from-racing-purple/20 to-transparent border border-racing-purple/30 rounded-xl p-3 flex flex-col items-center">
-            <span className="text-[10px] font-bold text-racing-purple uppercase tracking-widest mb-1">Session Best Lap</span>
-            <span className="text-xl font-mono text-white">{sessionStats.fastestLap ? formatTime(sessionStats.fastestLap) : "--:--.--"}</span>
+      <div className="flex-grow overflow-y-auto no-scrollbar px-4 py-6 space-y-8">
+
+        {/* Machine */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-0.5 h-4 bg-racing-red" />
+            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Machine</span>
           </div>
-          <div className="bg-gradient-to-br from-racing-yellow/20 to-transparent border border-racing-yellow/30 rounded-xl p-3 flex flex-col items-center">
-            <span className="text-[10px] font-bold text-racing-yellow uppercase tracking-widest mb-1">Max Session Speed</span>
-            <span className="text-xl font-mono text-white">{formatSpeed(sessionStats.maxSpeedMps, 'kph')} <span className="text-xs text-gray-500">KPH</span></span>
+          <div className="space-y-2 carbon p-3 border border-white/5">
+            <SearchableDropdown options={Object.keys(MOTORCYCLE_DATA)} value={selectedRide?.brand || ''} onSelect={(val) => handleRideChange('brand', val)} placeholder="Brand" />
+            <SearchableDropdown options={selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : []} value={selectedRide?.model || ''} onSelect={(val) => handleRideChange('model', val)} placeholder="Model" disabled={!selectedRide?.brand} />
+            <SearchableDropdown options={YEARS} value={selectedRide?.year || ''} onSelect={(val) => handleRideChange('year', val)} placeholder="Year" />
+          </div>
+        </section>
+
+        {/* Lap Gate */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-0.5 h-4 bg-racing-red" />
+            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Lap Gate</span>
+          </div>
+          <div className="space-y-6 carbon p-4 border border-white/5">
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-[10px] font-bold text-gray-500 uppercase">Gate Radius</span>
+                <span className="text-[11px] font-mono text-racing-yellow font-bold">{detectionRadius} m</span>
+              </div>
+              <input type="range" min="5" max="100" step="5" value={detectionRadius} onChange={(e) => setDetectionRadius(parseInt(e.target.value))} className="w-full" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-[10px] font-bold text-gray-500 uppercase">Min Lap Time</span>
+                <span className="text-[11px] font-mono text-racing-yellow font-bold">{minLapTime} s</span>
+              </div>
+              <input type="range" min="10" max="180" step="5" value={minLapTime} onChange={(e) => setMinLapTime(parseInt(e.target.value))} className="w-full" />
+            </div>
+          </div>
+        </section>
+
+        {/* Auto Recording */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-0.5 h-4 transition-colors ${autoMode ? 'bg-racing-green' : 'bg-white/20'}`} />
+              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Auto Recording</span>
+            </div>
+            <button onClick={() => setAutoMode(!autoMode)} className={`relative inline-flex h-5 w-10 items-center transition-colors ${autoMode ? 'bg-racing-green' : 'bg-white/10'}`}>
+              <span className={`inline-block h-3.5 w-3.5 bg-white transition-transform ${autoMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+          {autoMode && (
+            <div className="space-y-6 carbon p-4 border border-white/5 animate-fade-in">
+              <div>
+                <p className="text-[8px] font-black text-racing-green uppercase tracking-widest mb-3">— Start Logic</p>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Trigger Speed</span><span className="text-[10px] font-mono text-white">{autoStartSpeed} KPH</span></div>
+                    <input type="range" min="5" max="60" step="5" value={autoStartSpeed} onChange={(e) => setAutoStartSpeed(parseInt(e.target.value))} className="w-full" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Sustain</span><span className="text-[10px] font-mono text-white">{autoStartDelay} s</span></div>
+                    <input type="range" min="1" max="10" step="1" value={autoStartDelay} onChange={(e) => setAutoStartDelay(parseInt(e.target.value))} className="w-full" />
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-white/5 pt-4">
+                <p className="text-[8px] font-black text-racing-red uppercase tracking-widest mb-3">— Stop Logic</p>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Speed Limit</span><span className="text-[10px] font-mono text-white">{autoStopSpeed} KPH</span></div>
+                    <input type="range" min="0" max="30" step="5" value={autoStopSpeed} onChange={(e) => setAutoStopSpeed(parseInt(e.target.value))} className="w-full" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Cooldown</span><span className="text-[10px] font-mono text-white">{autoStopDelay} s</span></div>
+                    <input type="range" min="2" max="60" step="1" value={autoStopDelay} onChange={(e) => setAutoStopDelay(parseInt(e.target.value))} className="w-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="p-4 border-t border-white/5">
+        <button onClick={() => setShowSettings(false)} className="cut-corner-lg w-full bg-racing-red text-white font-black py-4 uppercase tracking-[0.2em] text-sm active:opacity-80 transition-opacity">
+          Confirm
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── TRACK SELECTOR ──────────────────────────────────────────────────────────
+  if (showTrackSelector) return (
+    <div className="absolute inset-0 z-50 bg-black flex flex-col stripe-top animate-fade-in">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+        <div>
+          <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">MotoGP Circuits</p>
+          <h2 className="text-lg font-display text-white uppercase italic leading-none">Select Track</h2>
+        </div>
+        <button onClick={() => setShowTrackSelector(false)} className="w-9 h-9 flex items-center justify-center border border-white/10 text-gray-400 hover:border-racing-red transition-colors">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div className="flex-grow overflow-y-auto no-scrollbar pb-safe">
+        {MOTOGP_TRACKS.map((track, i) => (
+          <button
+            key={track.id}
+            onClick={() => handleTrackSelect(track)}
+            className="w-full carbon border-b border-white/5 px-4 py-3.5 flex items-center justify-between active:bg-white/5 transition-colors text-left"
+            style={{ animationDelay: `${i * 20}ms` }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-0.5 h-8 bg-racing-red/30" />
+              <div>
+                <div className="text-sm font-black text-white uppercase tracking-tight">{track.name}</div>
+                <div className="text-[10px] text-gray-500 font-bold uppercase">{track.location}</div>
+              </div>
+            </div>
+            <span className="text-xl">{track.flag}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── MAIN TIMER VIEW ─────────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col h-full bg-racing-dark relative overflow-hidden">
+
+      {/* Red speed stripe at top */}
+      <div className="h-[3px] bg-gradient-to-r from-racing-red via-racing-orange to-transparent flex-shrink-0" />
+
+      {/* ── Status bar ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full ${currentLocation ? 'bg-racing-green' : 'bg-racing-red'} animate-pulse`} />
+            <span className="text-[9px] font-mono font-bold text-gray-500 uppercase">GPS {currentLocation?.accuracy.toFixed(0) || '--'}m</span>
+          </div>
+          {weather && (
+            <div className="flex items-center gap-1 border-l border-white/10 pl-3">
+              <span className="text-xs">{weather.icon}</span>
+              <span className="text-[9px] font-mono font-bold text-white">{weather.temp.toFixed(0)}°C</span>
+            </div>
+          )}
+          {selectedRide && (
+            <div className="border-l border-white/10 pl-3">
+              <span className="text-[9px] font-black text-racing-red uppercase tracking-tight">{selectedRide.brand} {selectedRide.model}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {autoMode && <span className="text-[8px] font-black text-racing-green border border-racing-green/40 px-1.5 py-0.5 uppercase tracking-wider">AUTO</span>}
+          {startFinishLine ? (
+            <span className={`text-[8px] font-black border px-1.5 py-0.5 uppercase tracking-wider transition-all ${isNearLine ? 'text-racing-green border-racing-green animate-pulse-fast' : 'text-racing-yellow border-racing-yellow/40'}`}>
+              {isNearLine ? '◉ IN RANGE' : `${distanceToLine!.toFixed(0)}m`}
+            </span>
+          ) : (
+            <span className="text-[8px] font-black text-gray-600 border border-white/5 px-1.5 py-0.5 uppercase">NO LINE</span>
+          )}
+          <button onClick={() => setShowSettings(true)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white border border-white/5 hover:border-racing-red transition-colors">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" /></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Main timer area ─────────────────────────────────────────────── */}
+      <div className="flex-grow flex flex-col items-center justify-center relative px-4 py-2">
+
+        {/* Live track minimap */}
+        {currentSessionPath.length > 2 && !showMap && (
+          <div className="absolute top-0 right-0 w-20 h-20 border-b border-l border-white/10 p-1 z-20">
+            <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
+            <div className="absolute bottom-0.5 right-1 text-[5px] font-black text-racing-red uppercase tracking-widest animate-pulse-fast">LIVE</div>
+          </div>
+        )}
+
+        {showMap && currentSessionPath.length > 2 ? (
+          <div className="w-full aspect-square max-w-[260px] animate-fade-in border border-white/10">
+            <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
+          </div>
+        ) : (
+          <>
+            {/* Lap counter */}
+            <div className="flex items-center gap-3 mb-1">
+              {isRecording && <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse-fast" />}
+              <span className="text-[10px] font-black tracking-[0.3em] text-gray-500 uppercase">
+                {currentLapStart ? `Lap ${laps.length + 1}` : autoMode ? 'Armed' : 'Ready'}
+              </span>
+              {isRecording && <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse-fast" />}
+            </div>
+
+            {/* MAIN TIME — biggest element on screen */}
+            <div className={`font-mono font-black text-white leading-none tabular-nums timer-glow select-none ${isNewBest ? 'text-racing-yellow animate-flash-best' : ''}`}
+              style={{ fontSize: 'clamp(52px, 15vw, 72px)', letterSpacing: '-0.02em' }}>
+              {formatTime(elapsed)}
+            </div>
+
+            {/* Delta vs best */}
+            {delta !== null && (
+              <div className={`mt-1 font-mono font-black text-xl tabular-nums animate-slide-right ${delta > 0 ? 'text-racing-red' : 'text-racing-green'}`}>
+                {delta > 0 ? '+' : ''}{(delta / 1000).toFixed(3)}
+              </div>
+            )}
+
+            {/* Last lap */}
+            <div className="mt-2 flex items-center gap-2 text-gray-600 text-xs font-mono font-bold tracking-widest uppercase">
+              <span>Last</span>
+              <span className="text-gray-300">{lastLap ? formatTime(lastLap.time) : '--:--.--'}</span>
+              {isNewBest && <span className="text-racing-yellow text-[8px] font-black animate-pulse-fast">◆ BEST</span>}
+            </div>
+          </>
+        )}
+
+        <button onClick={() => setShowMap(!showMap)} className="mt-3 text-[9px] font-black text-gray-600 hover:text-racing-red uppercase tracking-widest transition-colors">
+          {showMap ? '▲ TIMER' : '▼ MAP'}
+        </button>
+      </div>
+
+      {/* ── Stats row ──────────────────────────────────────────────────── */}
+      {(sessionStats.fastestLap || sessionStats.maxSpeedMps > 0) && (
+        <div className="grid grid-cols-2 border-t border-white/5 flex-shrink-0">
+          <div className="px-4 py-2.5 border-r border-white/5">
+            <p className="data-label mb-0.5">Session Best</p>
+            <p className="font-mono font-black text-white text-base tabular-nums">
+              {sessionStats.fastestLap ? formatTime(sessionStats.fastestLap) : '--:--.--'}
+            </p>
+          </div>
+          <div className="px-4 py-2.5">
+            <p className="data-label mb-0.5">Top Speed</p>
+            <p className="font-mono font-black text-white text-base tabular-nums">
+              {formatSpeed(sessionStats.maxSpeedMps, 'kph')} <span className="text-[10px] text-gray-600 font-bold">KPH</span>
+            </p>
           </div>
         </div>
       )}
 
-      {/* Speed & Graph */}
-      <div className="h-40 bg-racing-card rounded-xl border border-gray-800 relative overflow-hidden">
-        <div className="absolute top-3 left-4 z-10">
-          <div className="text-3xl font-display text-white leading-none">{formatSpeed(currentSpeed, 'kph')}</div>
-          <div className="text-[10px] text-gray-400 font-bold">KPH</div>
+      {/* ── Speed graph ────────────────────────────────────────────────── */}
+      <div className="h-[88px] carbon border-t border-white/5 relative overflow-hidden flex-shrink-0">
+        <div className="absolute left-3 top-2 z-10">
+          <span className="font-mono font-black text-white leading-none" style={{ fontSize: 28 }}>
+            {formatSpeed(currentSpeed, 'kph')}
+          </span>
+          <span className="text-[9px] font-black text-gray-600 uppercase ml-1">kph</span>
         </div>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={speedHistory}>
+          <AreaChart data={speedHistory} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <defs>
-              <linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#FF3B30" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#FF3B30" stopOpacity={0}/>
+              <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#E8001A" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="#E8001A" stopOpacity={0} />
               </linearGradient>
             </defs>
             <YAxis hide domain={[0, 'auto']} />
-            <Area type="monotone" dataKey="speed" stroke="#FF3B30" strokeWidth={3} fillOpacity={1} fill="url(#colorSpeed)" isAnimationActive={false} />
+            <Area type="monotone" dataKey="speed" stroke="#E8001A" strokeWidth={2} fill="url(#sg)" isAnimationActive={false} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Controls */}
-      <div className="grid grid-cols-2 gap-4 mt-auto">
-        <div className="flex space-x-2">
-            <button onClick={() => currentLocation && setStartFinishLine(currentLocation)} disabled={isRecording || !currentLocation} className="flex-1 bg-gray-800 active:bg-gray-700 text-white font-bold text-sm py-4 rounded-xl border border-gray-700 transition-colors disabled:opacity-50 flex flex-col items-center justify-center leading-none">
-            <span>SET</span><span className="text-[10px] text-gray-400 mt-1 uppercase">GPS</span>
-            </button>
-            <button onClick={() => setShowTrackSelector(true)} disabled={isRecording} className="flex-1 bg-gray-800 active:bg-gray-700 text-white font-bold text-sm py-4 rounded-xl border border-gray-700 transition-colors disabled:opacity-50 flex flex-col items-center justify-center leading-none">
-            <span>LOAD</span><span className="text-[10px] text-gray-400 mt-1 uppercase">Track</span>
-            </button>
-        </div>
-        <button onClick={toggleRecording} className={`${isRecording ? 'bg-racing-red animate-pulse shadow-racing-red/20' : 'bg-racing-green shadow-racing-green/20'} text-black font-display text-xl uppercase py-4 rounded-xl transition-all shadow-lg`}>
-          {isRecording ? "STOP" : "START"}
+      {/* ── Controls ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-0 border-t border-white/5 flex-shrink-0">
+        <button
+          onClick={() => currentLocation && setStartFinishLine(currentLocation)}
+          disabled={isRecording || !currentLocation}
+          className="carbon border-r border-white/5 py-4 flex flex-col items-center justify-center gap-0.5 disabled:opacity-30 active:bg-white/5 transition-colors"
+        >
+          <span className="text-xs font-black text-white uppercase">Set</span>
+          <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">GPS Pin</span>
+        </button>
+        <button
+          onClick={() => setShowTrackSelector(true)}
+          disabled={isRecording}
+          className="carbon border-r border-white/5 py-4 flex flex-col items-center justify-center gap-0.5 disabled:opacity-30 active:bg-white/5 transition-colors"
+        >
+          <span className="text-xs font-black text-white uppercase">Track</span>
+          <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">Select</span>
+        </button>
+        <button
+          onClick={toggleRecording}
+          className={`py-4 flex flex-col items-center justify-center gap-0.5 font-black text-sm uppercase tracking-wider transition-all active:opacity-80
+            ${isRecording
+              ? 'bg-racing-red text-white shadow-glow-red animate-pulse-fast'
+              : 'bg-racing-green text-black shadow-glow-green'
+            }`}
+        >
+          <span>{isRecording ? '■ STOP' : '▶ START'}</span>
         </button>
       </div>
     </div>

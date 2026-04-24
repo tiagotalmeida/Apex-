@@ -7,13 +7,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Apex" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#0a0a0a" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <title>Apex GPS Lap Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Russo+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700;900&family=Russo+One&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -21,48 +21,152 @@
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
               display: ['Russo One', 'sans-serif'],
+              mono: ['Orbitron', 'monospace'],
             },
             colors: {
               racing: {
-                red: '#FF3B30',
-                dark: '#1C1C1E',
-                card: '#2C2C2E',
-                green: '#34C759',
-                yellow: '#FFCC00',
-                purple: '#AF52DE',
+                red:    '#E8001A',
+                orange: '#FF6B00',
+                dark:   '#0f0f0f',
+                card:   '#161616',
+                panel:  '#1a1a1a',
+                green:  '#00C853',
+                yellow: '#FFD600',
+                white:  '#F5F5F5',
               }
+            },
+            boxShadow: {
+              'glow-red':   '0 0 20px rgba(232,0,26,0.5)',
+              'glow-green': '0 0 20px rgba(0,200,83,0.5)',
+              'glow-white': '0 0 15px rgba(245,245,245,0.2)',
             }
           }
         }
       }
     </script>
     <style>
+      :root { --stripe: #E8001A; }
+
+      * { -webkit-tap-highlight-color: transparent; }
+
       body {
-        background-color: #000;
-        color: #fff;
+        background-color: #0a0a0a;
+        color: #f5f5f5;
+        -webkit-font-smoothing: antialiased;
       }
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
+
+      /* ── Scrollbar ── */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* ── Carbon fibre texture ── */
+      .carbon {
+        background-color: #141414;
+        background-image:
+          repeating-linear-gradient(45deg,  transparent, transparent 3px, rgba(255,255,255,.018) 3px, rgba(255,255,255,.018) 6px),
+          repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,.018) 3px, rgba(255,255,255,.018) 6px);
       }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      .no-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+
+      /* ── Red speed-stripe (top accent line) ── */
+      .stripe-top {
+        position: relative;
       }
+      .stripe-top::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--stripe) 0%, #ff4d00 60%, transparent 100%);
+        z-index: 10;
+      }
+
+      /* ── Angled cut-corner button ── */
+      .cut-corner {
+        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+      }
+      .cut-corner-lg {
+        clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+      }
+
+      /* ── Timer digit glow ── */
+      .timer-glow {
+        text-shadow: 0 0 30px rgba(232,0,26,0.3), 0 0 60px rgba(232,0,26,0.1);
+      }
+
+      /* ── Sector indicator pip ── */
+      .sector-active {
+        background: #E8001A;
+        box-shadow: 0 0 8px rgba(232,0,26,0.8);
+      }
+      .sector-done { background: #00C853; }
+      .sector-pending { background: #2a2a2a; }
+
+      /* ── Animations ── */
       @keyframes pulse-fast {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+        50% { opacity: 0.4; }
       }
       @keyframes fade-in {
-        from { opacity: 0; transform: translateY(5px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
-      .animate-pulse-fast {
-        animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      @keyframes slide-in-right {
+        from { opacity: 0; transform: translateX(20px); }
+        to   { opacity: 1; transform: translateX(0); }
       }
-      .animate-fade-in {
-        animation: fade-in 0.2s ease-out forwards;
+      @keyframes flash-best {
+        0%   { background-color: #FFD600; color: #000; }
+        50%  { background-color: transparent; color: #FFD600; }
+        100% { background-color: #FFD600; color: #000; }
+      }
+
+      .animate-pulse-fast  { animation: pulse-fast 0.8s ease-in-out infinite; }
+      .animate-fade-in     { animation: fade-in 0.2s ease-out forwards; }
+      .animate-slide-right { animation: slide-in-right 0.25s ease-out forwards; }
+      .animate-flash-best  { animation: flash-best 0.4s ease-in-out 3; }
+
+      /* ── Racing data row ── */
+      .data-row {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        padding: 6px 0;
+      }
+      .data-label {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #555;
+      }
+
+      /* ── Range input ── */
+      input[type=range] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type=range]::-webkit-slider-runnable-track {
+        height: 3px;
+        background: #2a2a2a;
+        border-radius: 2px;
+      }
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px; height: 16px;
+        background: #E8001A;
+        border-radius: 50%;
+        margin-top: -6.5px;
+        box-shadow: 0 0 6px rgba(232,0,26,0.6);
+      }
+
+      /* ── Nav active underline ── */
+      .nav-active-bar {
+        position: absolute;
+        bottom: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 24px; height: 2px;
+        background: #E8001A;
+        border-radius: 1px;
       }
     </style>
   <script type="importmap">

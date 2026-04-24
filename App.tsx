@@ -124,10 +124,10 @@ const App: React.FC = () => {
         )}
         {currentTab === AppTab.ANALYSIS && (
             <div className="flex flex-col h-full bg-black">
-                <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-racing-dark">
+                <div className="px-4 pt-4 pb-3 border-b border-white/5 flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-display text-white uppercase italic">Telemetry</h2>
-                        <p className="text-gray-400 text-[10px] font-bold tracking-widest uppercase mt-1">Session Data & Analysis</p>
+                        <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">Analysis</p>
+                        <h2 className="text-lg font-display text-white uppercase italic leading-none">Telemetry</h2>
                     </div>
                     {comparisonIds.length > 0 && (
                       <button 
@@ -385,30 +385,48 @@ const App: React.FC = () => {
       </main>
 
       {/* Navigation Bar */}
-      <nav className="bg-racing-dark border-t border-gray-800 pb-safe">
-        <div className="flex justify-around items-center h-16">
-          <button onClick={() => setCurrentTab(AppTab.TIMER)} className={`flex flex-col items-center justify-center w-full h-full ${currentTab === AppTab.TIMER ? 'text-racing-red' : 'text-gray-500'}`}>
-            {/* Apex logo mark — stylised A */}
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
-              <polygon points="12,2 3,22 6.5,22 12,8.5" opacity="1"/>
-              <polygon points="12,2 21,22 17.5,22 12,8.5" opacity="1"/>
-              <rect x="5.5" y="13.5" width="13" height="2.5" rx="0.5"/>
-              <polygon points="12,5 8,13.5 16,13.5" fill={currentTab === AppTab.TIMER ? '#000' : '#111'}/>
-            </svg>
-            <span className="text-[10px] font-bold mt-1 uppercase">Timer</span>
-          </button>
-          <button onClick={() => setCurrentTab(AppTab.ANALYSIS)} className={`flex flex-col items-center justify-center w-full h-full ${currentTab === AppTab.ANALYSIS ? 'text-racing-red' : 'text-gray-500'}`}>
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
-            <span className="text-[10px] font-bold mt-1 uppercase">Data</span>
-          </button>
-          <button onClick={() => setCurrentTab(AppTab.GARAGE)} className={`flex flex-col items-center justify-center w-full h-full ${currentTab === AppTab.GARAGE ? 'text-racing-red' : 'text-gray-500'}`}>
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            <span className="text-[10px] font-bold mt-1 uppercase">Garage</span>
-          </button>
-          <button onClick={() => setCurrentTab(AppTab.MAPS)} className={`flex flex-col items-center justify-center w-full h-full ${currentTab === AppTab.MAPS ? 'text-racing-red' : 'text-gray-500'}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            <span className="text-[10px] font-bold mt-1 uppercase">Pit Wall</span>
-          </button>
+      <nav className="bg-[#0a0a0a] border-t border-white/5 pb-safe flex-shrink-0">
+        {/* racing stripe across top of nav */}
+        <div className="h-px bg-gradient-to-r from-transparent via-racing-red to-transparent" />
+        <div className="flex h-14">
+          {([
+            { tab: AppTab.TIMER, label: 'Timer', icon: (
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+                <polygon points="12,2 3,22 6.5,22 12,8.5"/>
+                <polygon points="12,2 21,22 17.5,22 12,8.5"/>
+                <rect x="5.5" y="13.5" width="13" height="2.5" rx="0"/>
+              </svg>
+            )},
+            { tab: AppTab.ANALYSIS, label: 'Data', icon: (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="square" d="M4 20V14M9 20V8M14 20V12M19 20V4"/>
+              </svg>
+            )},
+            { tab: AppTab.GARAGE, label: 'Garage', icon: (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="square" d="M12 3L2 9v12h20V9L12 3z"/>
+                <path strokeLinecap="square" d="M9 21V12h6v9"/>
+              </svg>
+            )},
+            { tab: AppTab.MAPS, label: 'Pit Wall', icon: (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="10" r="3"/><path strokeLinecap="square" d="M12 2C7.6 2 4 5.6 4 10c0 5.4 8 12 8 12s8-6.6 8-12c0-4.4-3.6-8-8-8z"/>
+              </svg>
+            )},
+          ] as const).map(({ tab, label, icon }) => {
+            const active = currentTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setCurrentTab(tab)}
+                className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${active ? 'text-white' : 'text-gray-600 hover:text-gray-400'}`}
+              >
+                {active && <div className="nav-active-bar" />}
+                {icon}
+                <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'text-racing-red' : ''}`}>{label}</span>
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>
