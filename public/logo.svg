@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#000000"/>
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF5040"/>
+      <stop offset="100%" style="stop-color:#CC1500"/>
+    </linearGradient>
+    <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF3B30;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#FF3B30;stop-opacity:0.2"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bgGrad)"/>
+
+  <!-- Outer track arc (270° sweep, gap at bottom-right = start/finish straight) -->
+  <!-- Thin grey outer ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#2a2a2a" stroke-width="2"/>
+
+  <!-- Timer arc - the 3/4 circle sweep in red, representing elapsed lap time -->
+  <!-- Arc from 225° to 135° clockwise (270°), path on 190r -->
+  <path
+    d="M 256,66
+       A 190,190 0 1,1 120.3,391.7"
+    fill="none"
+    stroke="url(#arcGrad)"
+    stroke-width="14"
+    stroke-linecap="round"
+    filter="url(#glow)"
+  />
+
+  <!-- Tick marks around the arc (every 30°) -->
+  <g stroke="#444" stroke-width="2" stroke-linecap="round">
+    <!-- 12 o'clock -->
+    <line x1="256" y1="56" x2="256" y2="76"/>
+    <!-- 1 o'clock (30°) -->
+    <line x1="351" y1="82.6" x2="341.6" y2="98.9"/>
+    <!-- 2 o'clock (60°) -->
+    <line x1="419.4" y1="161" x2="406.7" y2="168.5"/>
+    <!-- 3 o'clock (90°) -->
+    <line x1="446" y1="256" x2="426" y2="256"/>
+    <!-- 4 o'clock (120°) -->
+    <line x1="419.4" y1="351" x2="406.7" y2="343.5"/>
+    <!-- 5 o'clock (150°) -->
+    <line x1="351" y1="429.4" x2="341.6" y2="413.1"/>
+    <!-- 6 o'clock (180°) -->
+    <line x1="256" y1="456" x2="256" y2="436"/>
+    <!-- 7 o'clock (210°) -->
+    <line x1="161" y1="429.4" x2="170.4" y2="413.1"/>
+    <!-- 8 o'clock (240°) -->
+    <line x1="92.6" y1="351" x2="105.3" y2="343.5"/>
+    <!-- 9 o'clock (270°) -->
+    <line x1="66" y1="256" x2="86" y2="256"/>
+    <!-- 10 o'clock (300°) -->
+    <line x1="92.6" y1="161" x2="105.3" y2="168.5"/>
+    <!-- 11 o'clock (330°) -->
+    <line x1="161" y1="82.6" x2="170.4" y2="98.9"/>
+  </g>
+
+  <!-- Bold tick at 12 (white) -->
+  <line x1="256" y1="52" x2="256" y2="80" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Center dot / crown -->
+  <circle cx="256" cy="256" r="8" fill="#FF3B30" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="3" fill="#ffffff"/>
+
+  <!-- Large A lettermark — apex of the corner -->
+  <!-- Bold geometric A, slightly above center -->
+  <g filter="url(#softglow)">
+    <!-- Left leg -->
+    <polygon
+      points="256,108 178,310 208,310 256,175"
+      fill="url(#redGrad)"
+    />
+    <!-- Right leg -->
+    <polygon
+      points="256,108 334,310 304,310 256,175"
+      fill="url(#redGrad)"
+    />
+    <!-- Crossbar -->
+    <rect x="198" y="240" width="116" height="26" rx="4" fill="url(#redGrad)"/>
+    <!-- White inner cutout to make A hollow / sporty -->
+    <polygon
+      points="256,140 224,240 288,240"
+      fill="#000000"
+    />
+  </g>
+
+  <!-- "APEX" wordmark below -->
+  <text
+    x="256"
+    y="368"
+    text-anchor="middle"
+    font-family="'Arial Black', 'Impact', sans-serif"
+    font-weight="900"
+    font-size="40"
+    letter-spacing="14"
+    fill="#ffffff"
+  >APEX</text>
+
+  <!-- "GPS LAP TIMER" sub-label -->
+  <text
+    x="256"
+    y="396"
+    text-anchor="middle"
+    font-family="'Arial', sans-serif"
+    font-weight="400"
+    font-size="16"
+    letter-spacing="6"
+    fill="#666666"
+  >GPS LAP TIMER</text>
+
+  <!-- Start/finish flag accent — small checkered band at top of arc -->
+  <g transform="translate(238,52)">
+    <rect x="0" y="0" width="8" height="8" fill="#fff"/>
+    <rect x="8" y="0" width="8" height="8" fill="#000"/>
+    <rect x="0" y="8" width="8" height="8" fill="#000"/>
+    <rect x="8" y="8" width="8" height="8" fill="#fff"/>
+  </g>
+
+</svg>

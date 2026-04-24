@@ -388,7 +388,13 @@ const App: React.FC = () => {
       <nav className="bg-racing-dark border-t border-gray-800 pb-safe">
         <div className="flex justify-around items-center h-16">
           <button onClick={() => setCurrentTab(AppTab.TIMER)} className={`flex flex-col items-center justify-center w-full h-full ${currentTab === AppTab.TIMER ? 'text-racing-red' : 'text-gray-500'}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            {/* Apex logo mark — stylised A */}
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+              <polygon points="12,2 3,22 6.5,22 12,8.5" opacity="1"/>
+              <polygon points="12,2 21,22 17.5,22 12,8.5" opacity="1"/>
+              <rect x="5.5" y="13.5" width="13" height="2.5" rx="0.5"/>
+              <polygon points="12,5 8,13.5 16,13.5" fill={currentTab === AppTab.TIMER ? '#000' : '#111'}/>
+            </svg>
             <span className="text-[10px] font-bold mt-1 uppercase">Timer</span>
           </button>
           <button onClick={() => setCurrentTab(AppTab.ANALYSIS)} className={`flex flex-col items-center justify-center w-full h-full ${currentTab === AppTab.ANALYSIS ? 'text-racing-red' : 'text-gray-500'}`}>
