@@ -30,26 +30,10 @@ export interface SessionData {
 }
 
 export enum AppTab {
-  TIMER = 'TIMER',
+  TIMER    = 'TIMER',
   ANALYSIS = 'ANALYSIS',
-  GARAGE = 'GARAGE', // Image Editing
-  MAPS = 'MAPS' // Nearby Services
-}
-
-export interface GroundingChunk {
-  web?: {
-    uri: string;
-    title: string;
-  };
-  maps?: {
-    uri: string;
-    title: string;
-    placeAnswerSources?: {
-      reviewSnippets?: {
-        content: string;
-      }[];
-    }[];
-  };
+  GARAGE   = 'GARAGE',
+  MAPS     = 'MAPS',
 }
 
 export interface Track {

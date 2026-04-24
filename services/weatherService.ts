@@ -8,7 +8,7 @@ export interface WeatherData {
  * Fetches current weather data for a given location using Open-Meteo.
  * This is a free, no-key-required API.
  */
-export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
+export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData | null> => {
   try {
     const response = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`
@@ -31,8 +31,7 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
     else if (code >= 95) { condition = "Thunderstorm"; icon = "⛈️"; }
 
     return { temp, condition, icon };
-  } catch (error) {
-    console.error("Weather fetch failed", error);
-    throw error;
+  } catch {
+    return null;
   }
 };
