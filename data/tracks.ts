@@ -56,5 +56,61 @@ export const MOTOGP_TRACKS: Track[] = [
       location: 'Netherlands',
       flag: '🇳🇱',
       startFinishLine: { latitude: 52.956793, longitude: 6.524450 }
+  },
+  {
+      id: 'portimao',
+      name: 'Autodromo Internacional do Algarve',
+      location: 'Portugal',
+      flag: '🇵🇹',
+      startFinishLine: { latitude: 37.227200, longitude: -8.626500 }
+  },
+  {
+      id: 'red_bull_ring',
+      name: 'Red Bull Ring',
+      location: 'Austria',
+      flag: '🇦🇹',
+      startFinishLine: { latitude: 47.219720, longitude: 14.764722 }
+  },
+  {
+      id: 'misano',
+      name: 'Misano World Circuit Marco Simoncelli',
+      location: 'Italy',
+      flag: '🇮🇹',
+      startFinishLine: { latitude: 43.965278, longitude: 12.683056 }
+  },
+  {
+      id: 'losail',
+      name: 'Lusail International Circuit',
+      location: 'Qatar',
+      flag: '🇶🇦',
+      startFinishLine: { latitude: 25.490167, longitude: 51.454778 }
+  },
+  {
+      id: 'motegi',
+      name: 'Twin Ring Motegi',
+      location: 'Japan',
+      flag: '🇯🇵',
+      startFinishLine: { latitude: 36.529722, longitude: 140.193056 }
+  },
+  {
+      id: 'mandalika',
+      name: 'Pertamina Mandalika Street Circuit',
+      location: 'Indonesia',
+      flag: '🇮🇩',
+      startFinishLine: { latitude: -8.896111, longitude: 116.296667 }
+  },
+  {
+      id: 'chang',
+      name: 'Chang International Circuit',
+      location: 'Thailand',
+      flag: '🇹🇭',
+      startFinishLine: { latitude: 14.950278, longitude: 102.565556 }
+  },
+  {
+      id: 'ricardo_tormo',
+      name: 'Circuit Ricardo Tormo',
+      location: 'Spain',
+      flag: '🇪🇸',
+      startFinishLine: { latitude: 39.488611, longitude: -0.630278 }
   }
 ];

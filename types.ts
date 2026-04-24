@@ -21,6 +21,12 @@ export interface SessionData {
   laps: Lap[];
   path: Coordinate[];
   startFinishLine: Coordinate | null;
+  motorcycle?: {
+    brand: string;
+    model: string;
+    year: string;
+  };
+  trackName?: string;
 }
 
 export enum AppTab {

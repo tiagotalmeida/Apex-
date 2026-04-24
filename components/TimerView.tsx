@@ -42,6 +42,24 @@ const TimerView: React.FC<TimerViewProps> = ({
   const [showMap, setShowMap] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
   const requestRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Acquire / release Wake Lock based on recording state
+  useEffect(() => {
+    if (!('wakeLock' in navigator)) return;
+
+    if (isRecording) {
+      (navigator as any).wakeLock.request('screen')
+        .then((lock: WakeLockSentinel) => { wakeLockRef.current = lock; })
+        .catch(() => {});
+    } else {
+      wakeLockRef.current?.release().then(() => { wakeLockRef.current = null; }).catch(() => {});
+    }
+
+    return () => {
+      wakeLockRef.current?.release().then(() => { wakeLockRef.current = null; }).catch(() => {});
+    };
+  }, [isRecording]);
 
   // Lap Detection Settings
   const [showSettings, setShowSettings] = useState(false);

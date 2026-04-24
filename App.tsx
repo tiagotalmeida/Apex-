@@ -218,7 +218,8 @@ const App: React.FC = () => {
                                              date: new Date().toISOString(),
                                              laps: laps,
                                              path: sessionPath,
-                                             startFinishLine: startFinishLine
+                                             startFinishLine: startFinishLine,
+                                             motorcycle: selectedRide ? { brand: selectedRide.brand, model: selectedRide.model, year: selectedRide.year } : undefined
                                          };
                                          const updated = [newSession, ...savedSessions];
                                          setSavedSessions(updated);
@@ -271,6 +272,11 @@ const App: React.FC = () => {
                                                     <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
                                                         {new Date(session.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                     </span>
+                                                    {session.motorcycle && (
+                                                      <span className="text-[10px] text-racing-purple font-bold uppercase tracking-tighter mt-0.5">
+                                                        {session.motorcycle.year} {session.motorcycle.brand} {session.motorcycle.model}
+                                                      </span>
+                                                    )}
                                                 </div>
                                                 <div className="flex flex-col items-end">
                                                     <span className="text-racing-yellow font-mono text-sm">
