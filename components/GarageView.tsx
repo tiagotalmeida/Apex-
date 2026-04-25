@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MOTORCYCLE_DATA, YEARS } from '../data/motorcycles';
 import { RideInfo } from '../App';
 import SearchableDropdown from './SearchableDropdown';
+import { TrashIcon, BikeIcon } from './Icons';
 
 interface GarageViewProps {
   selectedRide: RideInfo | null;
@@ -34,6 +35,7 @@ const GarageView: React.FC<GarageViewProps> = ({ selectedRide, setSelectedRide }
     setSelectedRide(editRide);
     localStorage.setItem('apex_garage_ride', JSON.stringify(editRide));
     setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleClear = () => {
@@ -47,111 +49,115 @@ const GarageView: React.FC<GarageViewProps> = ({ selectedRide, setSelectedRide }
   const canSave = editRide.brand && editRide.model && editRide.year;
 
   return (
-    <div className="flex flex-col h-full bg-racing-dark">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="h-[3px] bg-gradient-to-r from-racing-red via-racing-orange to-transparent" />
-      <div className="px-4 pt-4 pb-3 border-b border-white/5">
-        <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">Machine</p>
-        <h2 className="text-lg font-display text-white uppercase italic leading-none">Garage</h2>
+      <div className="px-5 pt-6 pb-4 flex-shrink-0">
+        <p className="label-sm text-racing-red mb-1">Your Machine</p>
+        <h1 className="text-3xl font-black text-white tracking-tight">Garage</h1>
       </div>
 
-      <div className="flex-grow overflow-y-auto no-scrollbar px-4 py-6 space-y-6">
+      <div className="flex-grow overflow-y-auto no-scrollbar px-5 pb-8 space-y-5">
 
-        {/* Active ride badge */}
-        {selectedRide && (
-          <div className="carbon border border-racing-red/30 px-4 py-3 flex items-center justify-between animate-fade-in">
-            <div>
-              <p className="text-[8px] font-black text-racing-red uppercase tracking-widest mb-0.5">Active Machine</p>
-              <p className="text-base font-black text-white uppercase tracking-tight">
-                {selectedRide.year} {selectedRide.brand} {selectedRide.model}
-              </p>
+        {/* Active ride card */}
+        {selectedRide ? (
+          <div className="relative rounded-3xl overflow-hidden surface-elevated animate-fade-in">
+            <div className="absolute inset-0 grad-accent-soft pointer-events-none" />
+            <div className="relative px-5 py-5 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl grad-accent flex items-center justify-center flex-shrink-0 shadow-lg shadow-racing-red/30">
+                <BikeIcon className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-grow min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-racing-red mb-0.5">Active</p>
+                <p className="text-lg font-black text-white truncate">{selectedRide.brand} {selectedRide.model}</p>
+                <p className="text-sm text-slate-400 font-semibold">{selectedRide.year}</p>
+              </div>
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50 flex-shrink-0" />
             </div>
-            <div className="w-2 h-2 rounded-full bg-racing-green animate-pulse" />
+          </div>
+        ) : (
+          <div className="rounded-3xl surface-card px-5 py-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 mx-auto flex items-center justify-center mb-3">
+              <BikeIcon className="w-9 h-9 text-slate-500" />
+            </div>
+            <p className="text-white font-bold text-base mb-1">No machine selected</p>
+            <p className="text-sm text-slate-400">Pick your ride to start logging sessions</p>
           </div>
         )}
 
-        {/* Bike selector */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 bg-racing-red" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Select Your Ride</span>
+        {/* Selectors */}
+        <div className="rounded-3xl surface-card p-5 space-y-4">
+          <div>
+            <label className="label-sm block mb-2">Brand</label>
+            <SearchableDropdown
+              options={Object.keys(MOTORCYCLE_DATA)}
+              value={editRide.brand}
+              onSelect={(v) => handleChange('brand', v)}
+              placeholder="Choose a brand"
+            />
           </div>
-
-          <div className="space-y-2 carbon p-4 border border-white/5">
-            <div>
-              <p className="data-label mb-1">Brand</p>
-              <SearchableDropdown
-                options={Object.keys(MOTORCYCLE_DATA)}
-                value={editRide.brand}
-                onSelect={(v) => handleChange('brand', v)}
-                placeholder="Select brand"
-              />
-            </div>
-            <div>
-              <p className="data-label mb-1">Model</p>
-              <SearchableDropdown
-                options={models}
-                value={editRide.model}
-                onSelect={(v) => handleChange('model', v)}
-                placeholder="Select model"
-                disabled={!editRide.brand}
-              />
-            </div>
-            <div>
-              <p className="data-label mb-1">Year</p>
-              <SearchableDropdown
-                options={YEARS}
-                value={editRide.year}
-                onSelect={(v) => handleChange('year', v)}
-                placeholder="Select year"
-              />
-            </div>
+          <div>
+            <label className="label-sm block mb-2">Model</label>
+            <SearchableDropdown
+              options={models}
+              value={editRide.model}
+              onSelect={(v) => handleChange('model', v)}
+              placeholder={editRide.brand ? 'Choose a model' : 'Select brand first'}
+              disabled={!editRide.brand}
+            />
           </div>
-        </section>
+          <div>
+            <label className="label-sm block mb-2">Year</label>
+            <SearchableDropdown
+              options={YEARS}
+              value={editRide.year}
+              onSelect={(v) => handleChange('year', v)}
+              placeholder="Choose a year"
+            />
+          </div>
+        </div>
 
-        {/* Save / Clear */}
+        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={handleSave}
             disabled={!canSave}
-            className={`cut-corner-lg flex-grow py-4 font-black text-sm uppercase tracking-[0.2em] transition-all active:opacity-80 disabled:opacity-30
-              ${saved ? 'bg-racing-green text-black' : 'bg-racing-red text-white'}`}
+            className={`flex-grow rounded-2xl py-4 text-[15px] font-bold tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed
+              ${saved ? 'btn-success' : 'btn-primary'}`}
           >
             {saved ? '✓ Saved' : 'Save Machine'}
           </button>
           {selectedRide && (
             <button
               onClick={handleClear}
-              className="carbon border border-white/10 px-5 py-4 text-gray-400 hover:text-racing-red hover:border-racing-red transition-colors"
+              className="rounded-2xl px-5 btn-ghost flex items-center justify-center hover:text-racing-red transition-colors"
+              aria-label="Clear machine"
             >
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              <TrashIcon className="w-5 h-5" />
             </button>
           )}
         </div>
 
-        {/* Supported brands list */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 bg-white/20" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-gray-500 uppercase">Supported Brands</span>
-          </div>
+        {/* Quick brand picker */}
+        <div>
+          <p className="label-sm mb-3 px-1">Quick Select</p>
           <div className="flex flex-wrap gap-2">
-            {Object.keys(MOTORCYCLE_DATA).map(brand => (
-              <button
-                key={brand}
-                onClick={() => handleChange('brand', brand)}
-                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider border transition-colors
-                  ${editRide.brand === brand
-                    ? 'bg-racing-red border-racing-red text-white'
-                    : 'carbon border-white/10 text-gray-500 hover:border-white/30 hover:text-white'}`}
-              >
-                {brand}
-              </button>
-            ))}
+            {Object.keys(MOTORCYCLE_DATA).map(brand => {
+              const active = editRide.brand === brand;
+              return (
+                <button
+                  key={brand}
+                  onClick={() => handleChange('brand', brand)}
+                  className={`px-4 py-2.5 rounded-full text-[13px] font-bold transition-all
+                    ${active
+                      ? 'btn-primary'
+                      : 'bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 hover:text-white'}`}
+                >
+                  {brand}
+                </button>
+              );
+            })}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

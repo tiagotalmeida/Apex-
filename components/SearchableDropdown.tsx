@@ -39,37 +39,41 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-racing-dark border border-gray-700 rounded-lg p-2.5 text-white text-left text-sm flex justify-between items-center transition-all focus:outline-none focus:border-racing-yellow ${
-          disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:border-gray-500'
-        }`}
+        className={`w-full rounded-xl px-4 py-3.5 text-left text-[15px] flex justify-between items-center transition-all
+          ${isOpen
+            ? 'bg-white/[0.08] border border-racing-red/40 ring-2 ring-racing-red/20'
+            : 'bg-white/[0.04] border border-white/10 hover:bg-white/[0.06]'}
+          ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
       >
-        <span className={`truncate ${value ? 'text-white font-medium' : 'text-gray-500'}`}>
+        <span className={`truncate font-semibold ${value ? 'text-white' : 'text-slate-500'}`}>
           {value || placeholder}
         </span>
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className={`h-4 w-4 text-gray-500 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180 text-racing-yellow' : ''}`} 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
+        <svg
+          className={`h-5 w-5 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180 text-racing-red' : 'text-slate-400'}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-1 bg-racing-card border border-gray-700 rounded-lg shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-fade-in">
-          <div className="p-2 border-b border-gray-700 bg-racing-dark">
-            <input
-              autoFocus
-              type="text"
-              placeholder="Filter..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-black/40 border border-gray-600 rounded p-1.5 text-xs text-white focus:outline-none focus:border-racing-yellow"
-            />
+        <div className="absolute z-[100] w-full mt-2 surface-overlay rounded-2xl border border-white/10 shadow-2xl shadow-black/80 overflow-hidden animate-fade-in">
+          <div className="p-2.5 border-b border-white/5">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/5 rounded-lg pl-10 pr-3 py-2.5 text-sm text-white font-medium placeholder-slate-500 focus:outline-none focus:bg-white/[0.08] transition-colors"
+              />
+            </div>
           </div>
-          <div className="max-h-56 overflow-y-auto no-scrollbar py-1">
+          <div className="max-h-64 overflow-y-auto no-scrollbar py-1">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button
@@ -80,15 +84,23 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                     setIsOpen(false);
                     setSearchTerm('');
                   }}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-racing-red/20 ${
-                    value === option ? 'text-racing-yellow font-bold bg-racing-yellow/10' : 'text-gray-300'
-                  }`}
+                  className={`w-full text-left px-4 py-3 text-[15px] font-semibold transition-colors flex items-center justify-between
+                    ${value === option
+                      ? 'text-white bg-gradient-to-r from-racing-red/25 to-transparent'
+                      : 'text-slate-200 hover:bg-white/5'}`}
                 >
-                  {option}
+                  <span>{option}</span>
+                  {value === option && (
+                    <svg className="w-5 h-5 text-racing-red" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                  )}
                 </button>
               ))
             ) : (
-              <div className="px-4 py-3 text-xs text-gray-500 italic text-center">No matches found</div>
+              <div className="px-4 py-6 text-sm text-slate-500 text-center font-medium">
+                No matches found
+              </div>
             )}
           </div>
         </div>

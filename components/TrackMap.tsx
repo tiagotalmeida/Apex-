@@ -15,7 +15,7 @@ const TrackMap: React.FC<TrackMapProps> = ({
   startFinishLine, 
   userLocation,
   className = "", 
-  strokeColor = "#FF3B30",
+  strokeColor = "#E8001A",
   showPoints = false
 }) => {
   const svgData = useMemo(() => {

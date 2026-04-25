@@ -3,6 +3,7 @@ import { Coordinate } from '../types';
 import { RideInfo } from '../App';
 import { MOTOGP_TRACKS } from '../data/tracks';
 import { getDistance } from '../services/locationService';
+import { PinIcon } from './Icons';
 
 interface MapsViewProps {
   currentLocation: Coordinate | null;
@@ -30,68 +31,64 @@ const MapsView: React.FC<MapsViewProps> = ({ currentLocation, selectedRide }) =>
   }, [currentLocation]);
 
   const fmt = (m: number | null) => {
-    if (m === null) return '---';
+    if (m === null) return '—';
     if (m < 1000) return `${m.toFixed(0)} m`;
     return `${(m / 1000).toFixed(0)} km`;
   };
 
   return (
-    <div className="flex flex-col h-full bg-racing-dark">
-      {/* Header */}
-      <div className="h-[3px] bg-gradient-to-r from-racing-red via-racing-orange to-transparent" />
-      <div className="px-4 pt-4 pb-3 border-b border-white/5">
-        <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">MotoGP Circuits</p>
-        <h2 className="text-lg font-display text-white uppercase italic leading-none">Pit Wall</h2>
+    <div className="flex flex-col h-full">
+      <div className="px-5 pt-6 pb-4 flex-shrink-0">
+        <p className="label-sm text-racing-red mb-1">MotoGP Circuits</p>
+        <h1 className="text-3xl font-black text-white tracking-tight">Pit Wall</h1>
         {selectedRide && (
-          <p className="text-[9px] font-black text-white/40 uppercase mt-0.5">
+          <p className="text-sm text-slate-400 font-semibold mt-1">
             {selectedRide.year} {selectedRide.brand} {selectedRide.model}
           </p>
         )}
       </div>
 
       {!currentLocation && (
-        <div className="mx-4 mt-4 carbon border border-racing-yellow/30 px-4 py-3 flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-racing-yellow animate-pulse" />
-          <p className="text-[10px] font-black text-racing-yellow uppercase tracking-widest">Waiting for GPS lock…</p>
+        <div className="mx-5 mb-3 rounded-2xl bg-racing-yellow/10 border border-racing-yellow/30 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          <span className="w-2 h-2 rounded-full bg-racing-yellow animate-pulse" />
+          <p className="text-sm font-bold text-racing-yellow">Waiting for GPS lock…</p>
         </div>
       )}
 
-      <div className="flex-grow overflow-y-auto no-scrollbar pb-4">
+      <div className="flex-grow overflow-y-auto no-scrollbar px-5 pb-8 space-y-2">
         {tracksWithDistance.map((track, i) => {
           const nearest = i === 0 && track.dist !== null;
           return (
             <div
               key={track.id}
-              className={`carbon border-b border-white/5 px-4 py-3.5 flex items-center justify-between
-                ${nearest ? 'border-l-2 border-l-racing-red' : ''}`}
+              className={`relative rounded-2xl px-4 py-3.5 flex items-center justify-between overflow-hidden
+                ${nearest ? 'surface-elevated' : 'surface-card'}`}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-black text-gray-700 w-4 tabular-nums">{i + 1}</span>
-                <div className="w-px h-8 bg-white/5" />
-                <div>
+              {nearest && <div className="absolute inset-0 grad-accent-soft pointer-events-none" />}
+              <div className="relative flex items-center gap-3 min-w-0">
+                <span className="text-2xl flex-shrink-0">{track.flag}</span>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-white uppercase tracking-tight leading-none">
-                      {track.name}
-                    </span>
+                    <span className="text-[15px] font-bold text-white truncate">{track.name}</span>
                     {nearest && (
-                      <span className="text-[7px] font-black bg-racing-red text-white px-1.5 py-0.5 uppercase tracking-wider">
-                        NEAREST
+                      <span className="text-[9px] font-bold rounded-full bg-racing-red text-white px-2 py-0.5 uppercase tracking-wider flex-shrink-0">
+                        Nearest
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-base">{track.flag}</span>
-                    <span className="text-[9px] font-bold text-gray-500 uppercase">{track.location}</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <PinIcon className="w-3 h-3 text-slate-500" />
+                    <span className="text-xs font-semibold text-slate-400 truncate">{track.location}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="text-right flex-shrink-0">
-                <p className={`text-sm font-mono font-black tabular-nums ${nearest ? 'text-racing-red' : 'text-gray-400'}`}>
+              <div className="relative text-right flex-shrink-0 ml-3">
+                <p className={`timer-digit text-[15px] tabular-nums ${nearest ? 'text-racing-red' : 'text-slate-200'}`}>
                   {fmt(track.dist)}
                 </p>
                 {track.dist !== null && (
-                  <p className="text-[8px] font-bold text-gray-700 uppercase">from you</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Away</p>
                 )}
               </div>
             </div>

@@ -8,6 +8,7 @@ import TrackMap from './TrackMap';
 import { RideInfo } from '../App';
 import SearchableDropdown from './SearchableDropdown';
 import { MOTORCYCLE_DATA, YEARS } from '../data/motorcycles';
+import { SettingsIcon, CloseIcon, PlayIcon, StopIcon, PinPlusIcon, FlagIcon } from './Icons';
 
 interface TimerViewProps {
   currentLocation: Coordinate | null;
@@ -44,7 +45,6 @@ const TimerView: React.FC<TimerViewProps> = ({
   const requestRef = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-  // Acquire / release Wake Lock based on recording state
   useEffect(() => {
     if (!('wakeLock' in navigator)) return;
 
@@ -61,38 +61,33 @@ const TimerView: React.FC<TimerViewProps> = ({
     };
   }, [isRecording]);
 
-  // Lap Detection Settings
   const [showSettings, setShowSettings] = useState(false);
-  const [detectionRadius, setDetectionRadius] = useState<number>(25); // meters
-  const [minLapTime, setMinLapTime] = useState<number>(20); // seconds
+  const [detectionRadius, setDetectionRadius] = useState<number>(25);
+  const [minLapTime, setMinLapTime] = useState<number>(20);
 
-  // Auto Start/Stop Settings
   const [autoMode, setAutoMode] = useState<boolean>(false);
-  const [autoStartSpeed, setAutoStartSpeed] = useState<number>(10); // kph
-  const [autoStartDelay, setAutoStartDelay] = useState<number>(2); // seconds
-  const [autoStopSpeed, setAutoStopSpeed] = useState<number>(5); // kph
-  const [autoStopDelay, setAutoStopDelay] = useState<number>(5); // seconds
+  const [autoStartSpeed, setAutoStartSpeed] = useState<number>(10);
+  const [autoStartDelay, setAutoStartDelay] = useState<number>(2);
+  const [autoStopSpeed, setAutoStopSpeed] = useState<number>(5);
+  const [autoStopDelay, setAutoStopDelay] = useState<number>(5);
 
-  // Timers for auto-logic
   const startThresholdTimer = useRef<number | null>(null);
   const stopThresholdTimer = useRef<number | null>(null);
 
-  // Session Stats Calculations
   const sessionStats = useMemo(() => {
     const fastestLap = laps.length > 0 ? Math.min(...laps.map(l => l.time)) : null;
-    const maxSpeedMps = currentSessionPath.length > 0 
-      ? Math.max(...currentSessionPath.map(c => c.speed || 0)) 
+    const maxSpeedMps = currentSessionPath.length > 0
+      ? Math.max(...currentSessionPath.map(c => c.speed || 0))
       : 0;
     return { fastestLap, maxSpeedMps };
   }, [laps, currentSessionPath]);
 
-  // Track new fastest lap for UI feedback
   useEffect(() => {
     if (laps.length > 0) {
       const lastLap = laps[laps.length - 1];
       const otherLaps = laps.slice(0, -1);
       const previousBest = otherLaps.length > 0 ? Math.min(...otherLaps.map(l => l.time)) : Infinity;
-      
+
       if (lastLap.time < previousBest) {
         setIsNewBest(true);
         const timer = setTimeout(() => setIsNewBest(false), 5000);
@@ -101,7 +96,6 @@ const TimerView: React.FC<TimerViewProps> = ({
     }
   }, [laps]);
 
-  // Fetch weather when location changes significantly or on mount
   useEffect(() => {
     if (currentLocation && !weather) {
       fetchWeather(currentLocation.latitude, currentLocation.longitude)
@@ -110,8 +104,7 @@ const TimerView: React.FC<TimerViewProps> = ({
     }
   }, [currentLocation, weather]);
 
-  // Timer animation loop
-  const animate = (time: number) => {
+  const animate = () => {
     if (isRecording && currentLapStart) {
       setElapsed(Date.now() - currentLapStart);
     }
@@ -123,7 +116,6 @@ const TimerView: React.FC<TimerViewProps> = ({
     return () => cancelAnimationFrame(requestRef.current);
   }, [isRecording, currentLapStart]);
 
-  // Auto Start / Stop Logic
   useEffect(() => {
     if (!autoMode || !currentLocation) return;
 
@@ -154,7 +146,6 @@ const TimerView: React.FC<TimerViewProps> = ({
     }
   }, [currentLocation, autoMode, isRecording, autoStartSpeed, autoStopSpeed, autoStartDelay, autoStopDelay]);
 
-  // Lap detection logic
   useEffect(() => {
     if (!isRecording || !currentLocation || !startFinishLine) return;
 
@@ -191,7 +182,7 @@ const TimerView: React.FC<TimerViewProps> = ({
       setCurrentLapStart(Date.now());
       setLastCrossTime(Date.now());
     } else if (startFinishLine) {
-      setLastCrossTime(Date.now() - (minLapTime * 1000) - 1000); 
+      setLastCrossTime(Date.now() - (minLapTime * 1000) - 1000);
     }
   };
 
@@ -202,11 +193,8 @@ const TimerView: React.FC<TimerViewProps> = ({
   };
 
   const toggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (isRecording) stopRecording();
+    else startRecording();
   };
 
   const handleTrackSelect = (track: Track) => {
@@ -243,94 +231,85 @@ const TimerView: React.FC<TimerViewProps> = ({
     ? lastLap.time - sessionStats.fastestLap
     : null;
 
-  // ── SETTINGS PANEL ─────────────────────────────────────────────────────────
+  // ── SETTINGS PANEL ────────────────────────────────────────────────────
   if (showSettings) return (
-    <div className="absolute inset-0 z-[60] bg-black flex flex-col stripe-top animate-fade-in">
-      <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+    <div className="absolute inset-0 z-[60] flex flex-col animate-fade-in" style={{ background: 'linear-gradient(180deg, #0b0b12 0%, #050508 100%)' }}>
+      <div className="flex items-center justify-between px-5 pt-6 pb-4">
         <div>
-          <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">Setup</p>
-          <h2 className="text-lg font-display text-white uppercase italic tracking-wider leading-none">Calibration</h2>
+          <p className="label-sm text-racing-red mb-1">Setup</p>
+          <h2 className="text-2xl font-black text-white tracking-tight">Settings</h2>
         </div>
-        <button onClick={() => setShowSettings(false)} className="w-9 h-9 flex items-center justify-center border border-white/10 text-gray-400 hover:text-white hover:border-racing-red transition-colors">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        <button onClick={() => setShowSettings(false)} className="w-10 h-10 rounded-full btn-ghost flex items-center justify-center">
+          <CloseIcon className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-grow overflow-y-auto no-scrollbar px-4 py-6 space-y-8">
+      <div className="flex-grow overflow-y-auto no-scrollbar px-5 pb-6 space-y-5">
 
-        {/* Machine */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 bg-racing-red" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Machine</span>
-          </div>
-          <div className="space-y-2 carbon p-3 border border-white/5">
-            <SearchableDropdown options={Object.keys(MOTORCYCLE_DATA)} value={selectedRide?.brand || ''} onSelect={(val) => handleRideChange('brand', val)} placeholder="Brand" />
-            <SearchableDropdown options={selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : []} value={selectedRide?.model || ''} onSelect={(val) => handleRideChange('model', val)} placeholder="Model" disabled={!selectedRide?.brand} />
-            <SearchableDropdown options={YEARS} value={selectedRide?.year || ''} onSelect={(val) => handleRideChange('year', val)} placeholder="Year" />
+        <section className="rounded-3xl surface-card p-5">
+          <p className="label-sm mb-4">Machine</p>
+          <div className="space-y-3">
+            <SearchableDropdown options={Object.keys(MOTORCYCLE_DATA)} value={selectedRide?.brand || ''} onSelect={(v) => handleRideChange('brand', v)} placeholder="Brand" />
+            <SearchableDropdown options={selectedRide?.brand ? MOTORCYCLE_DATA[selectedRide.brand] : []} value={selectedRide?.model || ''} onSelect={(v) => handleRideChange('model', v)} placeholder="Model" disabled={!selectedRide?.brand} />
+            <SearchableDropdown options={YEARS} value={selectedRide?.year || ''} onSelect={(v) => handleRideChange('year', v)} placeholder="Year" />
           </div>
         </section>
 
-        {/* Lap Gate */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 bg-racing-red" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Lap Gate</span>
-          </div>
-          <div className="space-y-6 carbon p-4 border border-white/5">
+        <section className="rounded-3xl surface-card p-5">
+          <p className="label-sm mb-4">Lap Gate</p>
+          <div className="space-y-5">
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-[10px] font-bold text-gray-500 uppercase">Gate Radius</span>
-                <span className="text-[11px] font-mono text-racing-yellow font-bold">{detectionRadius} m</span>
+                <span className="text-sm text-slate-300 font-semibold">Gate Radius</span>
+                <span className="text-sm text-white font-bold tabular-nums">{detectionRadius} m</span>
               </div>
-              <input type="range" min="5" max="100" step="5" value={detectionRadius} onChange={(e) => setDetectionRadius(parseInt(e.target.value))} className="w-full" />
+              <input type="range" min="5" max="100" step="5" value={detectionRadius} onChange={(e) => setDetectionRadius(parseInt(e.target.value))} />
             </div>
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-[10px] font-bold text-gray-500 uppercase">Min Lap Time</span>
-                <span className="text-[11px] font-mono text-racing-yellow font-bold">{minLapTime} s</span>
+                <span className="text-sm text-slate-300 font-semibold">Min Lap Time</span>
+                <span className="text-sm text-white font-bold tabular-nums">{minLapTime} s</span>
               </div>
-              <input type="range" min="10" max="180" step="5" value={minLapTime} onChange={(e) => setMinLapTime(parseInt(e.target.value))} className="w-full" />
+              <input type="range" min="10" max="180" step="5" value={minLapTime} onChange={(e) => setMinLapTime(parseInt(e.target.value))} />
             </div>
           </div>
         </section>
 
-        {/* Auto Recording */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className={`w-0.5 h-4 transition-colors ${autoMode ? 'bg-racing-green' : 'bg-white/20'}`} />
-              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Auto Recording</span>
-            </div>
-            <button onClick={() => setAutoMode(!autoMode)} className={`relative inline-flex h-5 w-10 items-center transition-colors ${autoMode ? 'bg-racing-green' : 'bg-white/10'}`}>
-              <span className={`inline-block h-3.5 w-3.5 bg-white transition-transform ${autoMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+        <section className="rounded-3xl surface-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="label-sm">Auto Recording</p>
+            <button
+              onClick={() => setAutoMode(!autoMode)}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${autoMode ? 'bg-emerald-500' : 'bg-white/10'}`}
+            >
+              <span className={`inline-block h-5 w-5 bg-white rounded-full shadow-lg transition-transform ${autoMode ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
           {autoMode && (
-            <div className="space-y-6 carbon p-4 border border-white/5 animate-fade-in">
+            <div className="space-y-5 animate-fade-in">
               <div>
-                <p className="text-[8px] font-black text-racing-green uppercase tracking-widest mb-3">— Start Logic</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 mb-3">Start</p>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Trigger Speed</span><span className="text-[10px] font-mono text-white">{autoStartSpeed} KPH</span></div>
-                    <input type="range" min="5" max="60" step="5" value={autoStartSpeed} onChange={(e) => setAutoStartSpeed(parseInt(e.target.value))} className="w-full" />
+                    <div className="flex justify-between mb-2"><span className="text-sm text-slate-300 font-semibold">Trigger Speed</span><span className="text-sm text-white font-bold tabular-nums">{autoStartSpeed} kph</span></div>
+                    <input type="range" min="5" max="60" step="5" value={autoStartSpeed} onChange={(e) => setAutoStartSpeed(parseInt(e.target.value))} />
                   </div>
                   <div>
-                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Sustain</span><span className="text-[10px] font-mono text-white">{autoStartDelay} s</span></div>
-                    <input type="range" min="1" max="10" step="1" value={autoStartDelay} onChange={(e) => setAutoStartDelay(parseInt(e.target.value))} className="w-full" />
+                    <div className="flex justify-between mb-2"><span className="text-sm text-slate-300 font-semibold">Sustain</span><span className="text-sm text-white font-bold tabular-nums">{autoStartDelay} s</span></div>
+                    <input type="range" min="1" max="10" step="1" value={autoStartDelay} onChange={(e) => setAutoStartDelay(parseInt(e.target.value))} />
                   </div>
                 </div>
               </div>
-              <div className="border-t border-white/5 pt-4">
-                <p className="text-[8px] font-black text-racing-red uppercase tracking-widest mb-3">— Stop Logic</p>
+              <div className="pt-4 border-t border-white/5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-racing-red mb-3">Stop</p>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Speed Limit</span><span className="text-[10px] font-mono text-white">{autoStopSpeed} KPH</span></div>
-                    <input type="range" min="0" max="30" step="5" value={autoStopSpeed} onChange={(e) => setAutoStopSpeed(parseInt(e.target.value))} className="w-full" />
+                    <div className="flex justify-between mb-2"><span className="text-sm text-slate-300 font-semibold">Speed Limit</span><span className="text-sm text-white font-bold tabular-nums">{autoStopSpeed} kph</span></div>
+                    <input type="range" min="0" max="30" step="5" value={autoStopSpeed} onChange={(e) => setAutoStopSpeed(parseInt(e.target.value))} />
                   </div>
                   <div>
-                    <div className="flex justify-between mb-1"><span className="text-[10px] text-gray-500 uppercase font-bold">Cooldown</span><span className="text-[10px] font-mono text-white">{autoStopDelay} s</span></div>
-                    <input type="range" min="2" max="60" step="1" value={autoStopDelay} onChange={(e) => setAutoStopDelay(parseInt(e.target.value))} className="w-full" />
+                    <div className="flex justify-between mb-2"><span className="text-sm text-slate-300 font-semibold">Cooldown</span><span className="text-sm text-white font-bold tabular-nums">{autoStopDelay} s</span></div>
+                    <input type="range" min="2" max="60" step="1" value={autoStopDelay} onChange={(e) => setAutoStopDelay(parseInt(e.target.value))} />
                   </div>
                 </div>
               </div>
@@ -339,210 +318,241 @@ const TimerView: React.FC<TimerViewProps> = ({
         </section>
       </div>
 
-      <div className="p-4 border-t border-white/5">
-        <button onClick={() => setShowSettings(false)} className="cut-corner-lg w-full bg-racing-red text-white font-black py-4 uppercase tracking-[0.2em] text-sm active:opacity-80 transition-opacity">
-          Confirm
+      <div className="px-5 pb-6">
+        <button onClick={() => setShowSettings(false)} className="btn-primary w-full rounded-2xl py-4 text-[15px] font-bold tracking-wide">
+          Done
         </button>
       </div>
     </div>
   );
 
-  // ── TRACK SELECTOR ──────────────────────────────────────────────────────────
+  // ── TRACK SELECTOR ────────────────────────────────────────────────────
   if (showTrackSelector) return (
-    <div className="absolute inset-0 z-50 bg-black flex flex-col stripe-top animate-fade-in">
-      <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+    <div className="absolute inset-0 z-50 flex flex-col animate-fade-in" style={{ background: 'linear-gradient(180deg, #0b0b12 0%, #050508 100%)' }}>
+      <div className="flex items-center justify-between px-5 pt-6 pb-4">
         <div>
-          <p className="text-[9px] font-black tracking-[0.25em] text-racing-red uppercase">MotoGP Circuits</p>
-          <h2 className="text-lg font-display text-white uppercase italic leading-none">Select Track</h2>
+          <p className="label-sm text-racing-red mb-1">MotoGP</p>
+          <h2 className="text-2xl font-black text-white tracking-tight">Pick a Circuit</h2>
         </div>
-        <button onClick={() => setShowTrackSelector(false)} className="w-9 h-9 flex items-center justify-center border border-white/10 text-gray-400 hover:border-racing-red transition-colors">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        <button onClick={() => setShowTrackSelector(false)} className="w-10 h-10 rounded-full btn-ghost flex items-center justify-center">
+          <CloseIcon className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex-grow overflow-y-auto no-scrollbar pb-safe">
-        {MOTOGP_TRACKS.map((track, i) => (
+      <div className="flex-grow overflow-y-auto no-scrollbar px-5 pb-6 space-y-2">
+        {MOTOGP_TRACKS.map((track) => (
           <button
             key={track.id}
             onClick={() => handleTrackSelect(track)}
-            className="w-full carbon border-b border-white/5 px-4 py-3.5 flex items-center justify-between active:bg-white/5 transition-colors text-left"
-            style={{ animationDelay: `${i * 20}ms` }}
+            className="w-full rounded-2xl surface-card px-4 py-3.5 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-0.5 h-8 bg-racing-red/30" />
-              <div>
-                <div className="text-sm font-black text-white uppercase tracking-tight">{track.name}</div>
-                <div className="text-[10px] text-gray-500 font-bold uppercase">{track.location}</div>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-2xl flex-shrink-0">{track.flag}</span>
+              <div className="min-w-0">
+                <div className="text-[15px] font-bold text-white truncate">{track.name}</div>
+                <div className="text-xs text-slate-400 font-semibold truncate">{track.location}</div>
               </div>
             </div>
-            <span className="text-xl">{track.flag}</span>
+            <svg className="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         ))}
       </div>
     </div>
   );
 
-  // ── MAIN TIMER VIEW ─────────────────────────────────────────────────────────
+  // ── MAIN TIMER VIEW ───────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full bg-racing-dark relative overflow-hidden">
+    <div className="flex flex-col h-full relative overflow-hidden">
 
-      {/* Red speed stripe at top */}
-      <div className="h-[3px] bg-gradient-to-r from-racing-red via-racing-orange to-transparent flex-shrink-0" />
-
-      {/* ── Status bar ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${currentLocation ? 'bg-racing-green' : 'bg-racing-red'} animate-pulse`} />
-            <span className="text-[9px] font-mono font-bold text-gray-500 uppercase">GPS {currentLocation?.accuracy.toFixed(0) || '--'}m</span>
-          </div>
-          {weather && (
-            <div className="flex items-center gap-1 border-l border-white/10 pl-3">
-              <span className="text-xs">{weather.icon}</span>
-              <span className="text-[9px] font-mono font-bold text-white">{weather.temp.toFixed(0)}°C</span>
+      {/* Status pill row */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {isRecording ? (
+            <div className="flex items-center gap-2 rounded-full bg-racing-red/15 border border-racing-red/30 px-3 py-1.5 flex-shrink-0">
+              <span className="w-2 h-2 rounded-full bg-racing-red animate-pulse-rec shadow-lg shadow-racing-red/60" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-racing-red">REC</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 flex-shrink-0">
+              <span className={`w-2 h-2 rounded-full ${currentLocation ? 'bg-emerald-400' : 'bg-racing-red animate-pulse'}`} />
+              <span className="text-[11px] font-bold text-slate-300 tabular-nums">
+                GPS {currentLocation?.accuracy.toFixed(0) ?? '—'}m
+              </span>
             </div>
           )}
-          {selectedRide && (
-            <div className="border-l border-white/10 pl-3">
-              <span className="text-[9px] font-black text-racing-red uppercase tracking-tight">{selectedRide.brand} {selectedRide.model}</span>
+          {weather && (
+            <div className="flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 flex-shrink-0">
+              <span className="text-sm leading-none">{weather.icon}</span>
+              <span className="text-[11px] font-bold text-slate-200 tabular-nums">{weather.temp.toFixed(0)}°</span>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {autoMode && <span className="text-[8px] font-black text-racing-green border border-racing-green/40 px-1.5 py-0.5 uppercase tracking-wider">AUTO</span>}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {autoMode && (
+            <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2.5 py-1">Auto</span>
+          )}
           {startFinishLine ? (
-            <span className={`text-[8px] font-black border px-1.5 py-0.5 uppercase tracking-wider transition-all ${isNearLine ? 'text-racing-green border-racing-green animate-pulse-fast' : 'text-racing-yellow border-racing-yellow/40'}`}>
-              {isNearLine ? '◉ IN RANGE' : `${distanceToLine!.toFixed(0)}m`}
+            <span className={`text-[10px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 tabular-nums transition-all
+              ${isNearLine
+                ? 'bg-emerald-500 text-black animate-pulse-rec'
+                : 'bg-white/5 border border-white/10 text-slate-300'}`}
+            >
+              {isNearLine ? 'Gate' : `${distanceToLine!.toFixed(0)}m`}
             </span>
           ) : (
-            <span className="text-[8px] font-black text-gray-600 border border-white/5 px-1.5 py-0.5 uppercase">NO LINE</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-white/5 border border-white/10 text-slate-500 px-2.5 py-1">No Gate</span>
           )}
-          <button onClick={() => setShowSettings(true)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white border border-white/5 hover:border-racing-red transition-colors">
-            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" /></svg>
+          <button onClick={() => setShowSettings(true)} className="w-9 h-9 rounded-full btn-ghost flex items-center justify-center">
+            <SettingsIcon className="w-[18px] h-[18px]" />
           </button>
         </div>
       </div>
 
-      {/* ── Main timer area ─────────────────────────────────────────────── */}
-      <div className="flex-grow flex flex-col items-center justify-center relative px-4 py-2">
+      {/* Hero timer area */}
+      <div className="flex-grow flex flex-col justify-center relative px-5">
 
-        {/* Live track minimap */}
-        {currentSessionPath.length > 2 && !showMap && (
-          <div className="absolute top-0 right-0 w-20 h-20 border-b border-l border-white/10 p-1 z-20">
-            <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
-            <div className="absolute bottom-0.5 right-1 text-[5px] font-black text-racing-red uppercase tracking-widest animate-pulse-fast">LIVE</div>
+        {/* Lap + minimap row */}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg
+              ${isRecording ? 'grad-accent shadow-racing-red/30' : 'bg-white/5 border border-white/10'}`}>
+              <span className={`timer-digit text-2xl ${isRecording ? 'text-white' : 'text-slate-400'}`}>
+                {currentLapStart ? (laps.length + 1).toString().padStart(2, '0') : '--'}
+              </span>
+            </div>
+            <div>
+              <p className="label-sm">{currentLapStart ? 'Current Lap' : autoMode ? 'Armed' : 'Ready'}</p>
+              <p className="text-sm text-slate-400 font-semibold">{selectedRide ? `${selectedRide.brand} ${selectedRide.model}` : 'No machine'}</p>
+            </div>
           </div>
-        )}
 
+          {currentSessionPath.length > 2 && (
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className="w-[60px] h-[60px] rounded-2xl surface-card p-1.5 flex-shrink-0 relative overflow-hidden"
+            >
+              <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
+              <span className={`absolute top-1 right-1.5 text-[8px] font-bold uppercase tracking-wider
+                ${isRecording ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {showMap ? 'Hide' : 'Live'}
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* Expanded map OR hero time */}
         {showMap && currentSessionPath.length > 2 ? (
-          <div className="w-full aspect-square max-w-[260px] animate-fade-in border border-white/10">
-            <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-[320px] aspect-square rounded-3xl surface-card p-3 animate-fade-in">
+              <TrackMap path={currentSessionPath} startFinishLine={startFinishLine} showPoints className="w-full h-full" />
+            </div>
           </div>
         ) : (
-          <>
-            {/* Lap counter */}
-            <div className="flex items-center gap-3 mb-1">
-              {isRecording && <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse-fast" />}
-              <span className="text-[10px] font-black tracking-[0.3em] text-gray-500 uppercase">
-                {currentLapStart ? `Lap ${laps.length + 1}` : autoMode ? 'Armed' : 'Ready'}
-              </span>
-              {isRecording && <div className="w-2 h-2 bg-racing-red rounded-full animate-pulse-fast" />}
-            </div>
-
-            {/* MAIN TIME — biggest element on screen */}
-            <div className={`font-mono font-black text-white leading-none tabular-nums timer-glow select-none ${isNewBest ? 'text-racing-yellow animate-flash-best' : ''}`}
-              style={{ fontSize: 'clamp(52px, 15vw, 72px)', letterSpacing: '-0.02em' }}>
+          <div className="flex flex-col items-center justify-center">
+            <div
+              className={`timer-digit ${isRecording ? 'timer-glow' : ''} select-none transition-colors
+                ${isNewBest ? 'text-racing-yellow animate-flash-best' : 'text-white'}`}
+              style={{ fontSize: 'clamp(64px, 20vw, 104px)' }}
+            >
               {formatTime(elapsed)}
             </div>
 
-            {/* Delta vs best */}
-            {delta !== null && (
-              <div className={`mt-1 font-mono font-black text-xl tabular-nums animate-slide-right ${delta > 0 ? 'text-racing-red' : 'text-racing-green'}`}>
+            {delta !== null ? (
+              <div
+                className={`mt-5 rounded-full px-5 py-2 timer-digit text-2xl tabular-nums shadow-lg
+                  ${delta > 0 ? 'grad-danger text-white shadow-red-500/20' : 'grad-success text-black shadow-emerald-500/20'}`}
+              >
                 {delta > 0 ? '+' : ''}{(delta / 1000).toFixed(3)}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-full bg-white/5 border border-white/10 px-5 py-2 timer-digit text-2xl text-slate-600 tabular-nums">
+                —.———
               </div>
             )}
 
-            {/* Last lap */}
-            <div className="mt-2 flex items-center gap-2 text-gray-600 text-xs font-mono font-bold tracking-widest uppercase">
-              <span>Last</span>
-              <span className="text-gray-300">{lastLap ? formatTime(lastLap.time) : '--:--.--'}</span>
-              {isNewBest && <span className="text-racing-yellow text-[8px] font-black animate-pulse-fast">◆ BEST</span>}
-            </div>
-          </>
+            {isNewBest && (
+              <div className="mt-4 rounded-full px-4 py-1.5 bg-racing-yellow/15 border border-racing-yellow/40 text-racing-yellow text-[11px] font-bold uppercase tracking-wider animate-fade-in">
+                ★ Fastest Lap
+              </div>
+            )}
+          </div>
         )}
-
-        <button onClick={() => setShowMap(!showMap)} className="mt-3 text-[9px] font-black text-gray-600 hover:text-racing-red uppercase tracking-widest transition-colors">
-          {showMap ? '▲ TIMER' : '▼ MAP'}
-        </button>
       </div>
 
-      {/* ── Stats row ──────────────────────────────────────────────────── */}
-      {(sessionStats.fastestLap || sessionStats.maxSpeedMps > 0) && (
-        <div className="grid grid-cols-2 border-t border-white/5 flex-shrink-0">
-          <div className="px-4 py-2.5 border-r border-white/5">
-            <p className="data-label mb-0.5">Session Best</p>
-            <p className="font-mono font-black text-white text-base tabular-nums">
-              {sessionStats.fastestLap ? formatTime(sessionStats.fastestLap) : '--:--.--'}
-            </p>
+      {/* Stats cards */}
+      <div className="px-5 pt-3 flex-shrink-0">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl surface-card px-3 py-3">
+            <p className="label-tiny mb-1">Last</p>
+            <p className="timer-digit text-white text-[15px] tabular-nums">{lastLap ? formatTime(lastLap.time) : '--:--.--'}</p>
           </div>
-          <div className="px-4 py-2.5">
-            <p className="data-label mb-0.5">Top Speed</p>
-            <p className="font-mono font-black text-white text-base tabular-nums">
-              {formatSpeed(sessionStats.maxSpeedMps, 'kph')} <span className="text-[10px] text-gray-600 font-bold">KPH</span>
-            </p>
+          <div className="rounded-2xl surface-card px-3 py-3">
+            <p className="label-tiny mb-1">Best</p>
+            <p className="timer-digit text-racing-yellow text-[15px] tabular-nums">{sessionStats.fastestLap ? formatTime(sessionStats.fastestLap) : '--:--.--'}</p>
+          </div>
+          <div className="rounded-2xl surface-card px-3 py-3">
+            <p className="label-tiny mb-1">Laps</p>
+            <p className="timer-digit text-white text-[15px] tabular-nums">{laps.length.toString().padStart(2, '0')}</p>
           </div>
         </div>
-      )}
-
-      {/* ── Speed graph ────────────────────────────────────────────────── */}
-      <div className="h-[88px] carbon border-t border-white/5 relative overflow-hidden flex-shrink-0">
-        <div className="absolute left-3 top-2 z-10">
-          <span className="font-mono font-black text-white leading-none" style={{ fontSize: 28 }}>
-            {formatSpeed(currentSpeed, 'kph')}
-          </span>
-          <span className="text-[9px] font-black text-gray-600 uppercase ml-1">kph</span>
-        </div>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={speedHistory} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#E8001A" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#E8001A" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <YAxis hide domain={[0, 'auto']} />
-            <Area type="monotone" dataKey="speed" stroke="#E8001A" strokeWidth={2} fill="url(#sg)" isAnimationActive={false} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
       </div>
 
-      {/* ── Controls ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-0 border-t border-white/5 flex-shrink-0">
-        <button
-          onClick={() => currentLocation && setStartFinishLine(currentLocation)}
-          disabled={isRecording || !currentLocation}
-          className="carbon border-r border-white/5 py-4 flex flex-col items-center justify-center gap-0.5 disabled:opacity-30 active:bg-white/5 transition-colors"
-        >
-          <span className="text-xs font-black text-white uppercase">Set</span>
-          <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">GPS Pin</span>
-        </button>
-        <button
-          onClick={() => setShowTrackSelector(true)}
-          disabled={isRecording}
-          className="carbon border-r border-white/5 py-4 flex flex-col items-center justify-center gap-0.5 disabled:opacity-30 active:bg-white/5 transition-colors"
-        >
-          <span className="text-xs font-black text-white uppercase">Track</span>
-          <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">Select</span>
-        </button>
-        <button
-          onClick={toggleRecording}
-          className={`py-4 flex flex-col items-center justify-center gap-0.5 font-black text-sm uppercase tracking-wider transition-all active:opacity-80
-            ${isRecording
-              ? 'bg-racing-red text-white shadow-glow-red animate-pulse-fast'
-              : 'bg-racing-green text-black shadow-glow-green'
-            }`}
-        >
-          <span>{isRecording ? '■ STOP' : '▶ START'}</span>
-        </button>
+      {/* Speed card */}
+      <div className="px-5 pt-3 flex-shrink-0">
+        <div className="relative h-[90px] rounded-2xl surface-card overflow-hidden">
+          <div className="absolute inset-y-0 left-4 flex items-center z-10 pointer-events-none gap-2">
+            <span className="timer-digit text-white tabular-nums" style={{ fontSize: 42, letterSpacing: '-0.03em' }}>
+              {formatSpeed(currentSpeed, 'kph')}
+            </span>
+            <div className="flex flex-col items-start">
+              <span className="text-[11px] font-bold text-racing-red uppercase tracking-wider leading-none">kph</span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider leading-none mt-1">Speed</span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={speedHistory} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF1744" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#FF1744" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <YAxis hide domain={[0, 'auto']} />
+              <Area type="monotone" dataKey="speed" stroke="#FF1744" strokeWidth={2.5} fill="url(#sg)" isAnimationActive={false} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="px-5 pt-3 pb-5 flex-shrink-0">
+        <div className="flex gap-2">
+          <button
+            onClick={() => currentLocation && setStartFinishLine(currentLocation)}
+            disabled={isRecording || !currentLocation}
+            className="flex-1 rounded-2xl btn-ghost py-3.5 flex flex-col items-center justify-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <PinPlusIcon className="w-5 h-5 text-racing-red" />
+            <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider">Set Gate</span>
+          </button>
+          <button
+            onClick={() => setShowTrackSelector(true)}
+            disabled={isRecording}
+            className="flex-1 rounded-2xl btn-ghost py-3.5 flex flex-col items-center justify-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <FlagIcon className="w-5 h-5 text-racing-red" />
+            <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider">Circuit</span>
+          </button>
+          <button
+            onClick={toggleRecording}
+            className={`flex-[1.4] rounded-2xl py-3.5 flex flex-col items-center justify-center gap-1 transition-all active:scale-[0.98]
+              ${isRecording ? 'btn-primary' : 'btn-success'}`}
+          >
+            {isRecording ? <StopIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
+            <span className="text-[12px] font-bold uppercase tracking-wider">{isRecording ? 'Stop' : 'Start'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
