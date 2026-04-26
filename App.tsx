@@ -70,7 +70,7 @@ const App: React.FC = () => {
   const sessionsToCompare = savedSessions.filter(s => comparisonIds.includes(s.id));
 
   return (
-    <div className="flex flex-col h-screen text-white font-sans overflow-hidden">
+    <div className="flex flex-col h-screen text-white font-sans overflow-hidden" style={{ background: 'var(--surface-0)' }}>
       <main className="flex-grow overflow-hidden relative">
         {currentTab === AppTab.TIMER && (
           <TimerView
@@ -96,7 +96,7 @@ const App: React.FC = () => {
           <div className="flex flex-col h-full">
             <div className="px-5 pt-6 pb-4 flex justify-between items-center flex-shrink-0">
               <div>
-                <p className="label-sm text-racing-red mb-1">Session</p>
+                <p className="label-sm mb-1" style={{ color: 'var(--accent)' }}>Session</p>
                 <h1 className="text-3xl font-black text-white tracking-tight">Telemetry</h1>
               </div>
               {comparisonIds.length > 0 && (
@@ -115,7 +115,7 @@ const App: React.FC = () => {
               {comparisonIds.length === 2 && sessionsToCompare.length === 2 && (
                 <div className="rounded-3xl surface-elevated overflow-hidden animate-fade-in">
                   <div className="px-5 py-4 flex justify-between items-center border-b border-white/5">
-                    <p className="label-sm text-racing-red">Head to Head</p>
+                    <p className="label-sm text-[var(--accent)]">Head to Head</p>
                     <div className="rounded-full grad-accent text-white text-[11px] font-bold px-2.5 py-0.5 uppercase tracking-wider">VS</div>
                   </div>
                   <div className="grid grid-cols-2 divide-x divide-white/5">
@@ -125,7 +125,7 @@ const App: React.FC = () => {
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                             {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </div>
-                          <div className={`timer-digit text-xl tabular-nums ${idx === 0 ? 'text-racing-red' : 'text-emerald-400'}`}>
+                          <div className={`timer-digit text-xl tabular-nums ${idx === 0 ? 'text-[var(--accent)]' : 'text-emerald-400'}`}>
                             {session.laps.length > 0
                               ? formatTime(Math.min(...session.laps.map(l => l.time)))
                               : '--:--.--'}
@@ -161,7 +161,7 @@ const App: React.FC = () => {
               <div className="rounded-3xl surface-card overflow-hidden">
                 <div className="px-5 py-4 flex justify-between items-center gap-3 border-b border-white/5">
                   <div className="min-w-0">
-                    <p className="label-sm text-racing-red mb-0.5">Active</p>
+                    <p className="label-sm text-[var(--accent)] mb-0.5">Active</p>
                     <div className="flex items-center gap-1.5 text-sm text-slate-300 font-semibold flex-wrap">
                       <span>{laps.length} laps</span>
                       <span className="text-slate-600">·</span>
@@ -239,7 +239,7 @@ const App: React.FC = () => {
                       const selected = comparisonIds.includes(session.id);
                       return (
                         <div key={session.id} className={`rounded-2xl overflow-hidden transition-all
-                          ${selected ? 'surface-elevated ring-2 ring-racing-red/40' : 'surface-card'}`}>
+                          ${selected ? 'surface-elevated ring-2 ring-[var(--accent)]/40' : 'surface-card'}`}>
                           <div className="px-4 py-3 flex justify-between items-start gap-3 border-b border-white/5">
                             <div className="min-w-0">
                               <p className="text-[15px] font-bold text-white truncate">
@@ -327,7 +327,7 @@ const App: React.FC = () => {
                                       localStorage.setItem('apex_sessions', JSON.stringify(updated));
                                     }
                                   }}
-                                  className="rounded-full btn-ghost px-2.5 py-1.5 hover:text-racing-red transition-colors"
+                                  className="rounded-full btn-ghost px-2.5 py-1.5 hover:text-[var(--accent)] transition-colors"
                                   aria-label="Delete"
                                 >
                                   <TrashIcon className="w-3.5 h-3.5" />
@@ -339,7 +339,7 @@ const App: React.FC = () => {
                           {comparingSessionId === session.id && (
                             <div className="border-t border-white/5 p-4 animate-fade-in">
                               <div className="flex justify-between items-center mb-3">
-                                <span className="label-sm text-racing-red animate-pulse">Live Position</span>
+                                <span className="label-sm text-[var(--accent)] animate-pulse">Live Position</span>
                                 <span className="text-xs text-slate-400 font-semibold">{new Date(session.date).toLocaleDateString()}</span>
                               </div>
                               <div className="aspect-[16/10] rounded-xl bg-white/[0.03] border border-white/5 p-2">
@@ -363,32 +363,36 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Navigation bar — modern floating pill style */}
-      <nav className={`pb-safe flex-shrink-0 ${isRecording ? 'hidden' : ''}`}>
-        <div className="px-3 pb-3 pt-1">
-          <div className="surface-glass rounded-3xl grid grid-cols-4 p-1.5">
-            {([
-              { tab: AppTab.TIMER, label: 'Timer', Icon: StopwatchIcon },
-              { tab: AppTab.ANALYSIS, label: 'Data', Icon: ChartIcon },
-              { tab: AppTab.GARAGE, label: 'Garage', Icon: BikeIcon },
-              { tab: AppTab.MAPS, label: 'Tracks', Icon: PinIcon },
-            ] as const).map(({ tab, label, Icon }) => {
-              const active = currentTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setCurrentTab(tab)}
-                  className={`relative rounded-2xl h-14 flex flex-col items-center justify-center gap-0.5 transition-all
-                    ${active ? 'grad-accent shadow-lg shadow-racing-red/30' : 'active:bg-white/5'}`}
-                >
-                  <Icon className={`w-6 h-6 ${active ? 'text-white' : 'text-slate-400'}`} />
-                  <span className={`text-[10px] font-bold tracking-wide ${active ? 'text-white' : 'text-slate-500'}`}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+      {/* Navigation bar */}
+      <nav className={`pb-safe flex-shrink-0 ${isRecording ? 'hidden' : ''}`}
+        style={{ background: 'var(--surface-1)', borderTop: '1px solid var(--border)' }}>
+        <div className="grid grid-cols-4 px-2 pt-1 pb-5">
+          {([
+            { tab: AppTab.TIMER,    label: 'Timer',  Icon: StopwatchIcon },
+            { tab: AppTab.ANALYSIS, label: 'Data',   Icon: ChartIcon },
+            { tab: AppTab.GARAGE,   label: 'Garage', Icon: BikeIcon },
+            { tab: AppTab.MAPS,     label: 'Tracks', Icon: PinIcon },
+          ] as const).map(({ tab, label, Icon }) => {
+            const active = currentTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setCurrentTab(tab)}
+                className="relative h-14 flex flex-col items-center justify-center gap-0.5 rounded-xl transition-all active:scale-95"
+                style={active ? { background: 'rgba(255,59,48,0.1)' } : {}}
+              >
+                <Icon className="w-6 h-6" style={{ color: active ? 'var(--accent)' : 'var(--ink-4)' }} />
+                <span className="text-[10px] font-bold tracking-wide"
+                  style={{ color: active ? '#fff' : 'var(--ink-4)' }}>
+                  {label}
+                </span>
+                {active && (
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
+                    style={{ background: 'var(--accent)' }} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>
